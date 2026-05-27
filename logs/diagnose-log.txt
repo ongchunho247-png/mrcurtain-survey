@@ -772,3 +772,21 @@ validate log  : 🔍  Bắt đầu kiểm tra trước khi deploy...
 ────────────────────────────────────────────────
 commit msg    : chore: them comment version Prompt 14.4
 ============================================================
+
+============================================================
+[16:12:12 27/5/2026] ❌  LỖI DEPLOY
+Lý do : git commit thất bại
+error         : fatal: cannot lock ref 'HEAD': Unable to create 'C:/Claude Code/web app mobile khao sat/.git/HEAD.lock': File exists.
+
+Another git process seems to be running in this repository, or the lock file may be stale
+message       : fix: sua tao cong trinh va hoan thien chon anh
+============================================================
+
+============================================================
+[16:28:42 27/5/2026] ❌  LỖI DEPLOY
+Lý do : git commit thất bại
+error         : fatal: cannot lock ref 'HEAD': Unable to create 'C:/Claude Code/web app mobile khao sat/.git/HEAD.lock': File exists.
+
+Another git process seems to be running in this repository, or the lock file may be stale
+message       : fix: sua tao cong trinh va hoan thien chon anh
+============================================================

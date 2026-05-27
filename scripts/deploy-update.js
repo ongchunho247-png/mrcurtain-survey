@@ -104,8 +104,20 @@ if (!statusResult.ok) {
 }
 
 if (!statusResult.out) {
+  // Kiểm tra xem có commit chưa push không
+  const aheadResult = runSilent('git status -sb');
+  const isAhead = aheadResult.out && aheadResult.out.includes('ahead');
+  if (isAhead) {
+    console.log('ℹ️   Không có thay đổi mới — nhưng có commit chưa push. Tiến hành push...');
+    const pushNow = runSilent('git push');
+    if (!pushNow.ok) {
+      abort('git push thất bại (unpushed commits)', { error: pushNow.err });
+    }
+    console.log('✅  Đã push commit còn tồn đọng lên GitHub.');
+    console.log('\n🌐  Netlify sẽ tự deploy trong ~30 giây.\n');
+    process.exit(0);
+  }
   console.log('ℹ️   Không có thay đổi nào để commit. Bỏ qua.\n');
-  // Xóa pending message nếu có
   if (existsSync(MSG_FILE)) { try { import('fs').then(f => f.unlinkSync(MSG_FILE)); } catch {} }
   process.exit(0);
 }
