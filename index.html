@@ -1511,10 +1511,14 @@
       } catch (e) { console.warn('[Settings] Lỗi lưu:', e); }
     }
     const THEMES = {
-      white:  { '--bg': '#f3f4f6', '--bg-card': '#ffffff', '--text': '#111827', '--text-secondary': '#6b7280', '--border': '#e5e7eb' },
-      dark:   { '--bg': '#111827', '--bg-card': '#1f2937', '--text': '#f9fafb', '--text-secondary': '#9ca3af', '--border': '#374151' },
-      orange: { '--bg': '#fff7ed', '--bg-card': '#ffffff', '--text': '#1c1917', '--text-secondary': '#78716c', '--border': '#fed7aa' },
-      blue:   { '--bg': '#eff6ff', '--bg-card': '#ffffff', '--text': '#1e3a5f', '--text-secondary': '#4b6280', '--border': '#bfdbfe' },
+      white:  { '--bg': '#f3f4f6', '--bg-card': '#ffffff', '--text': '#111827', '--text-secondary': '#6b7280', '--border': '#e5e7eb',
+                '--primary': '#1a56db', '--primary-dark': '#1346b8', '--primary-light': '#e8f0fe' },
+      dark:   { '--bg': '#0f172a',  '--bg-card': '#1e293b', '--text': '#f1f5f9', '--text-secondary': '#94a3b8', '--border': '#334155',
+                '--primary': '#3b82f6', '--primary-dark': '#2563eb', '--primary-light': '#1e3a5f' },
+      orange: { '--bg': '#fff7ed', '--bg-card': '#ffffff', '--text': '#1c1917', '--text-secondary': '#78716c', '--border': '#fed7aa',
+                '--primary': '#ea580c', '--primary-dark': '#c2410c', '--primary-light': '#ffedd5' },
+      blue:   { '--bg': '#eff6ff', '--bg-card': '#ffffff', '--text': '#1e3a5f', '--text-secondary': '#4b6280', '--border': '#bfdbfe',
+                '--primary': '#1d4ed8', '--primary-dark': '#1e40af', '--primary-light': '#dbeafe' },
     };
     function applyTheme(bgColor) {
       const theme = THEMES[bgColor] || THEMES.white;
@@ -4721,7 +4725,8 @@
 
               try {
                 const canvas = await html2canvas(singleDiv, {
-                  scale: 2, useCORS: true, allowTaint: true, backgroundColor: '#ffffff'
+                  scale: 1, useCORS: true, allowTaint: true,
+                  backgroundColor: '#ffffff', imageTimeout: 8000,
                 });
                 if (document.body.contains(singleDiv)) document.body.removeChild(singleDiv);
 
@@ -4734,7 +4739,7 @@
                   'Loi render anh stt=' + stt, formatError(imgErr));
               }
 
-              await new Promise(r => setTimeout(r, 120));
+              await new Promise(r => setTimeout(r, 20));
             }
 
             /* Tạo ZIP và hiển thị ShareModal */
