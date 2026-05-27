@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- MrCurtain Survey | Prompt 14.4 | build: 2026-05-27 -->
+<!-- MrCurtain Survey | Prompt 14.6 | build: 2026-05-27 -->
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
@@ -741,6 +741,14 @@
     .btn-sel.exit { color: var(--text-secondary); border-color: var(--border); background: var(--bg); flex: none; padding: 11px 14px; }
     /* Spacer tránh content bị action bar che */
     .selection-bar-spacer { height: 130px; }
+
+    /* Version badge — không cản thao tác (Prompt 14.6) */
+    .version-badge {
+      position: fixed; bottom: 8px; right: 10px;
+      font-size: 10px; color: rgba(0,0,0,0.28);
+      pointer-events: none; z-index: 9999;
+      font-family: monospace; user-select: none;
+    }
 
     /* Header photo-section khi ở chế độ chọn */
     .btn-select-mode {
@@ -5510,7 +5518,7 @@
       return (
         <ProjectList
           onSelectProject={projId => goTo('detail', projId)}
-          onCreateProject={() => goTo('create')}
+          onCreateNew={() => goTo('create')}
           onOpenTagManager={() => goTo('tag-manager')}
         />
       );
@@ -5518,7 +5526,15 @@
 
     // ── Mount ──────────────────────────────────────────────────
     const rootEl = document.getElementById('root');
-    ReactDOM.createRoot(rootEl).render(<App />);
+    function AppWithBadge() {
+      return (
+        <>
+          <App />
+          <div className="version-badge">P14.6</div>
+        </>
+      );
+    }
+    ReactDOM.createRoot(rootEl).render(<AppWithBadge />);
   </script>
 </body>
 </html>
