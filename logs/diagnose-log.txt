@@ -907,3 +907,30 @@ error         : fatal: cannot lock ref 'HEAD': Unable to create 'C:/Claude Code/
 Another git process seems to be running in this repository, or the lock file may be stale
 message       : chore: cap nhat app 27/5/2026
 ============================================================
+
+────────────────────────────────────────────────────────────
+[21:29:00 27/5/2026] ✅  DEPLOY THÀNH CÔNG
+Commit  : chore: cap nhat prompt version p15 va kiem tra theme
+Branch  : main
+Hash    : 3ffb912 chore: cap nhat prompt version p15 va kiem tra theme
+Remote  : https://github.com/ongchunho247-png/mrcurtain-survey.git
+Netlify : tự deploy từ branch main (~30 giây)
+────────────────────────────────────────────────────────────
+
+============================================================
+[21:37:18 27/5/2026] ❌  LỖI DEPLOY
+Lý do : git commit thất bại
+error         : fatal: cannot lock ref 'HEAD': Unable to create 'C:/Claude Code/web app mobile khao sat/.git/refs/heads/main.lock': File exists.
+
+Another git process seems to be running in this repository, or the lock file may be stale
+message       : fix: dark theme gam toi thuan, xoa icon thua, header theo theme
+============================================================
+
+============================================================
+[21:38:30 27/5/2026] ❌  LỖI DEPLOY
+Lý do : git commit thất bại
+error         : fatal: cannot lock ref 'HEAD': Unable to create 'C:/Claude Code/web app mobile khao sat/.git/refs/heads/main.lock': File exists.
+
+Another git process seems to be running in this repository, or the lock file may be stale
+message       : fix: dark theme gam toi thuan, xoa icon thua, header theo theme
+============================================================

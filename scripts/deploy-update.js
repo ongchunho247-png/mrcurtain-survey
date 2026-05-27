@@ -18,7 +18,8 @@ import { existsSync,
          readFileSync,
          writeFileSync,
          appendFileSync,
-         mkdirSync }         from 'fs';
+         mkdirSync,
+         unlinkSync }       from 'fs';
 import { join, dirname }     from 'path';
 import { fileURLToPath }     from 'url';
 
@@ -133,6 +134,13 @@ const addResult = runSilent('git add .');
 if (!addResult.ok) {
   abort('git add thất bại', { error: addResult.err, files: statusResult.out });
 }
+
+// Xóa git lock tồn đọng ngay trước khi commit
+const GIT_LOCK_FILES = ['HEAD.lock', 'index.lock', join('objects','maintenance.lock'),
+                        join('refs','heads','main.lock')];
+GIT_LOCK_FILES.forEach(l => {
+  try { unlinkSync(join(ROOT, '.git', l)); } catch {}
+});
 
 const commitResult = runSilent(`git commit -m "${commitMsg.replace(/"/g, "'")}"`);
 if (!commitResult.ok) {
