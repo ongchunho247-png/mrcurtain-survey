@@ -4906,12 +4906,6 @@
               )}
             />
 
-            {/* Nút quay lại (bottom action) */}
-            <div style={{paddingBottom:'24px'}}>
-              <button className="btn btn-secondary btn-full" onClick={onBack}>
-                ← Quay lại danh sách
-              </button>
-            </div>
           </div>
 
           {/* ExportModal overlay */}
@@ -4922,6 +4916,21 @@
               exporting={exporting}
               imageCount={getImages(projectId).length}
             />
+          )}
+
+          {/* Loading overlay khi xuất ảnh từ chế độ chọn (không qua ExportModal) */}
+          {exporting && !showExportModal && (
+            <div className="export-loading-overlay">
+              <div className="export-loading-box">
+                <div style={{fontSize:32, marginBottom:10}}>⏳</div>
+                <div style={{fontSize:14, fontWeight:600}}>
+                  {exporting.startsWith('Đang') ? exporting : '🗜️ Đang chuẩn bị file ZIP...'}
+                </div>
+                <div style={{fontSize:12, color:'var(--text-secondary)', marginTop:6}}>
+                  Vui lòng chờ, không tắt ứng dụng
+                </div>
+              </div>
+            </div>
           )}
 
           {/* ShareResultModal — hiển thị sau khi xuất file xong */}
@@ -5609,6 +5618,7 @@
           onSelectProject={projId => goTo('detail', projId)}
           onCreateNew={() => goTo('create')}
           onOpenTagManager={() => goTo('tag-manager')}
+          onOpenSettings={() => goTo('settings')}
         />
       );
     }
