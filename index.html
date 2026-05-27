@@ -3562,17 +3562,11 @@
           {/* Badge STT — góc trên trái */}
           <span className="photo-thumb-stt">{idx + 1}</span>
 
-          {/* Nút xóa hoặc vòng chọn — góc trên phải */}
-          {isSelectionMode ? (
+          {/* Trạng thái chọn — góc trên phải (chỉ hiện khi chọn nhiều) */}
+          {isSelectionMode && (
             isSelected
               ? <span className="photo-select-check">✓</span>
               : <span className="photo-select-ring"></span>
-          ) : (
-            <button
-              className="photo-thumb-delete"
-              onClick={e => { e.stopPropagation(); onDelete(img.imageId); }}
-              aria-label="Xóa ảnh"
-            >✕</button>
           )}
 
           {/* Ảnh */}
@@ -3887,18 +3881,7 @@
               </div>
             </div>
           )}
-          {/* Thanh chọn tất cả — chỉ hiện khi ở chế độ chọn */}
-          {isSelectionMode && imgCount > 0 && (
-            <div className="selection-header-row">
-              <span style={{fontSize:13, color:'var(--text-secondary)'}}>
-                Đã chọn <strong>{selectedImageIds.length}</strong> / {imgCount} ảnh
-              </span>
-              <button className="btn-select-all-sm"
-                onClick={selectedImageIds.length === imgCount ? deselectAll : selectAll}>
-                {selectedImageIds.length === imgCount ? 'Bỏ chọn tất cả' : 'Chọn tất cả'}
-              </button>
-            </div>
-          )}
+
 
           {/* Nút "Ảnh đã xóa" — nhẹ nhàng, trung tính */}
           <div className="photo-deleted-row">
@@ -4097,17 +4080,9 @@
           {isSelectionMode && <div className="selection-bar-spacer" />}
         </div>
 
-        {/* ── Action bar chế độ chọn nhiều ảnh (Prompt 14.5) ── */}
+        {/* ── Action bar chế độ chọn nhiều ảnh ── */}
         {isSelectionMode && (
           <div className="selection-action-bar">
-            <div className="selection-count-row">
-              <span className="selection-count-text">
-                ✓ Đã chọn {selectedImageIds.length} ảnh
-              </span>
-              {selectedImageIds.length > 0 && (
-                <button className="btn-deselect-all" onClick={deselectAll}>Bỏ chọn</button>
-              )}
-            </div>
             <div className="selection-action-row">
               <button className="btn-sel pdf"
                 disabled={selectedImageIds.length === 0}
@@ -4124,7 +4099,6 @@
                 onClick={() => setConfirmBulkDelete(true)}>
                 🗑 Xóa
               </button>
-              <button className="btn-sel exit" onClick={exitSelectionMode}>✕</button>
             </div>
           </div>
         )}
