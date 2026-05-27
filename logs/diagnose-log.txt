@@ -871,3 +871,39 @@ Hash    : ae4162e fix: doi mau toan bo app theo chu de va tang toc xuat anh
 Remote  : https://github.com/ongchunho247-png/mrcurtain-survey.git
 Netlify : tự deploy từ branch main (~30 giây)
 ────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────
+[18:07:47 27/5/2026] ✅  DEPLOY THÀNH CÔNG
+Commit  : chore: cap nhat app 27/5/2026
+Branch  : main
+Hash    : e4fbe1b chore: cap nhat app 27/5/2026
+Remote  : https://github.com/ongchunho247-png/mrcurtain-survey.git
+Netlify : tự deploy từ branch main (~30 giây)
+────────────────────────────────────────────────────────────
+
+============================================================
+[21:00:40 27/5/2026] ❌  LỖI DEPLOY
+Lý do : git commit thất bại
+error         : fatal: cannot lock ref 'HEAD': Unable to create 'C:/Claude Code/web app mobile khao sat/.git/HEAD.lock': File exists.
+
+Another git process seems to be running in this repository, or the lock file may be stale
+message       : chore: cap nhat app 27/5/2026
+============================================================
+
+============================================================
+[21:07:46 27/5/2026] ❌  LỖI DEPLOY
+Lý do : git commit thất bại
+error         : fatal: cannot lock ref 'HEAD': Unable to create 'C:/Claude Code/web app mobile khao sat/.git/HEAD.lock': File exists.
+
+Another git process seems to be running in this repository, or the lock file may be stale
+message       : chore: cap nhat app 27/5/2026
+============================================================
+
+============================================================
+[21:17:20 27/5/2026] ❌  LỖI DEPLOY
+Lý do : git commit thất bại
+error         : fatal: cannot lock ref 'HEAD': Unable to create 'C:/Claude Code/web app mobile khao sat/.git/HEAD.lock': File exists.
+
+Another git process seems to be running in this repository, or the lock file may be stale
+message       : chore: cap nhat app 27/5/2026
+============================================================

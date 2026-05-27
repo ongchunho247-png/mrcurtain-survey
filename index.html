@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <!-- MrCurtain Survey | Prompt 14.6 | build: 2026-05-27 -->
-<!-- APP_PROMPT_VERSION = "P14.6" —— chỉ sửa tại đây khi lên version mới -->
+<!-- APP_PROMPT_VERSION = "P15" —— chỉ sửa tại đây khi lên version mới -->
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="theme-color" content="#1a56db" />
+  <meta name="theme-color" content="#1a56db" id="meta-theme-color" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -1161,7 +1161,7 @@
     .tag-item-btn.btn-hide {
       background: #f3f4f6; color: var(--text-secondary);
     }
-    .tag-item-btn.btn-hide:active { background: #e5e7eb; }
+    .tag-item-btn.btn-hide:active { background: var(--border); }
     .tag-item-btn.btn-show {
       background: #d1fae5; color: #065f46;
     }
@@ -1287,7 +1287,7 @@
     .tag-item-row.sortable-chosen {
       box-shadow: 0 4px 12px var(--focus-ring);
       border-color: var(--primary);
-      background: #fff;
+      background: var(--bg-card);
       opacity: 0.95;
     }
 
@@ -1492,6 +1492,7 @@
     // =============================================
     // STORAGE UTILS
     // =============================================
+    const APP_PROMPT_VERSION = 'P15'; // Cập nhật khi lên version mới
     const STORAGE_KEY = 'mrcurtain_survey_projects';
     const STORAGE_KEY_LEGACY = 'mrcurtain_projects'; // key cũ từ Prompt 2
     // Khai báo sớm để runDataMigration() dùng được (Prompt 14.2)
@@ -1565,6 +1566,9 @@
       const key   = normalizeThemeKey(bgColor);
       const theme = THEMES[key];
       Object.entries(theme).forEach(([k, v]) => document.documentElement.style.setProperty(k, v));
+      // Cập nhật meta theme-color theo primary của theme
+      const metaTC = document.getElementById('meta-theme-color');
+      if (metaTC) metaTC.setAttribute('content', theme['--primary']);
     }
 
     // --- Logger có cấu trúc (in ra console theo format log template) ---
@@ -3228,7 +3232,7 @@
             <div style={{flex:1}}>
               <h1>MrCurtain Survey</h1>
               <div className="header-subtitle">Hệ thống khảo sát công trình
-                <span className="header-version-badge">P14.6</span>
+                <span className="header-version-badge">{APP_PROMPT_VERSION}</span>
               </div>
             </div>
             <button className="btn-settings" onClick={onOpenSettings} title="Cài đặt">⚙️</button>
