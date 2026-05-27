@@ -826,3 +826,12 @@ Hash    : a99f6d6 feat: chon anh bang thao tac truot
 Remote  : https://github.com/ongchunho247-png/mrcurtain-survey.git
 Netlify : tự deploy từ branch main (~30 giây)
 ────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────
+[17:27:06 27/5/2026] ✅  DEPLOY THÀNH CÔNG
+Commit  : fix: don gian che do chon anh va bo dau x
+Branch  : main
+Hash    : 22599a3 fix: don gian che do chon anh va bo dau x
+Remote  : https://github.com/ongchunho247-png/mrcurtain-survey.git
+Netlify : tự deploy từ branch main (~30 giây)
+────────────────────────────────────────────────────────────

@@ -4009,6 +4009,7 @@
           {imgCount > 0 && (
             <div
               className="photo-grid"
+              data-selecting={isSelectionMode ? "true" : undefined}
               onPointerDown={handleGridPointerDown}
               onPointerMove={handleGridPointerMove}
               onPointerUp={handleGridPointerUp}
@@ -5481,21 +5482,93 @@
       const [selectedProjectId,  setSelectedProjectId]  = useState(initial.selectedProjectId);
       const [selectedImageId,    setSelectedImageId]    = useState(initial.selectedImageId);
 
-      function goTo(newScreen, projectId, imageId) {
-        setScreen(newScreen);
-        setSelectedProjectId(projectId  || null);
-        setSelectedImageId(imageId      || null);
+      // ── Navigation history (Prompt 14.7) ──────────────────────
+      const navStackRef  = React.useRef([]);
+      const [navStack, setNavStackState] = useState([]);  // chỉ để trigger re-render
+
+      function setNavStack(updater) {
+        const newVal = typeof updater === 'function' ? updater(navStackRef.current) : updater;
+        navStackRef.current = newVal;
+        setNavStackState(newVal);
+      }
+
+      // Điều hướng trực tiếp — không đẩy vào stack (dùng nội bộ)
+      function navigateDirect(s, projId, imgId) {
+        setScreen(s);
+        setSelectedProjectId(projId || null);
+        setSelectedImageId(imgId   || null);
         saveCurrentView({
-          screen:            newScreen,
-          selectedProjectId: projectId  || null,
-          selectedImageId:   imageId    || null,
+          screen:            s,
+          selectedProjectId: projId || null,
+          selectedImageId:   imgId  || null,
         });
       }
+
+      // Điều hướng tiến — đẩy màn hình hiện tại vào stack trước
+      function goTo(newScreen, projectId, imageId) {
+        const currentEntry = { screen, selectedProjectId, selectedImageId };
+        const stack = navStackRef.current;
+        const top   = stack[stack.length - 1];
+        const isDup = top &&
+                      top.screen              === currentEntry.screen &&
+                      top.selectedProjectId   === currentEntry.selectedProjectId &&
+                      top.selectedImageId     === currentEntry.selectedImageId;
+        if (!isDup) setNavStack([...stack, currentEntry]);
+        navigateDirect(newScreen, projectId, imageId);
+      }
+
+      // Back — quay lại màn hình gần nhất trong stack
+      function handleBack() {
+        const stack = navStackRef.current;
+        if (stack.length === 0) {
+          if (screen !== 'list') navigateDirect('list', null, null);
+          return;
+        }
+        const prev     = stack[stack.length - 1];
+        const newStack = stack.slice(0, -1);
+        navStackRef.current = newStack;
+        setNavStackState(newStack);
+        navigateDirect(prev.screen, prev.selectedProjectId, prev.selectedImageId);
+      }
+
+      // ── Swipe right to back ────────────────────────────────────
+      useEffect(() => {
+        let sx = 0, sy = 0;
+        function onTouchStart(e) {
+          // Không kích hoạt khi đang nhập liệu
+          const tag = e.target.tagName;
+          if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+          // Không kích hoạt khi modal đang mở
+          if (document.querySelector('.modal-overlay')) return;
+          // Không kích hoạt khi đang ở chế độ chọn ảnh (tránh xung đột drag-select)
+          if (e.target.closest('[data-selecting="true"]')) return;
+          sx = e.touches[0].clientX;
+          sy = e.touches[0].clientY;
+        }
+        function onTouchEnd(e) {
+          const dx = e.changedTouches[0].clientX - sx;
+          const dy = e.changedTouches[0].clientY - sy;
+          // Trượt phải đủ rõ và ngang hơn dọc
+          if (dx > 80 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+            handleBackRef.current();
+          }
+        }
+        document.addEventListener('touchstart', onTouchStart, { passive: true });
+        document.addEventListener('touchend',   onTouchEnd,   { passive: true });
+        return () => {
+          document.removeEventListener('touchstart', onTouchStart);
+          document.removeEventListener('touchend',   onTouchEnd);
+        };
+      }, []);  // đăng ký một lần, dùng ref để luôn có handleBack mới nhất
+
+      // Ref để swipe handler luôn có handleBack mới nhất (tránh stale closure)
+      const handleBackRef = React.useRef(handleBack);
+      useEffect(() => { handleBackRef.current = handleBack; });
 
       if (screen === 'create') {
         return (
           <ProjectForm
-            onBack={() => goTo('list')}
+            onBack={handleBack}
             onSaved={proj => goTo('detail', proj.projectId)}
           />
         );
@@ -5505,7 +5578,7 @@
         return (
           <ProjectDetail
             projectId={selectedProjectId}
-            onBack={() => goTo('list')}
+            onBack={handleBack}
             onSelectImage={imgId => goTo('image-detail', selectedProjectId, imgId)}
             onOpenTagManager={() => goTo('tag-manager')}
           />
@@ -5517,7 +5590,7 @@
           <ImageDetail
             imageId={selectedImageId}
             projectId={selectedProjectId}
-            onBack={() => goTo('detail', selectedProjectId)}
+            onBack={handleBack}
           />
         );
       }
@@ -5525,10 +5598,7 @@
       if (screen === 'tag-manager') {
         return (
           <TagManager
-            onBack={() => {
-              if (selectedProjectId) goTo('detail', selectedProjectId);
-              else goTo('list');
-            }}
+            onBack={handleBack}
           />
         );
       }
