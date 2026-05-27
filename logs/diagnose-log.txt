@@ -862,3 +862,12 @@ Hash    : cadf687 feat: them settings bao gom mau nen va ten nguoi dung
 Remote  : https://github.com/ongchunho247-png/mrcurtain-survey.git
 Netlify : tự deploy từ branch main (~30 giây)
 ────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────
+[17:57:05 27/5/2026] ✅  DEPLOY THÀNH CÔNG
+Commit  : fix: doi mau toan bo app theo chu de va tang toc xuat anh
+Branch  : main
+Hash    : ae4162e fix: doi mau toan bo app theo chu de va tang toc xuat anh
+Remote  : https://github.com/ongchunho247-png/mrcurtain-survey.git
+Netlify : tự deploy từ branch main (~30 giây)
+────────────────────────────────────────────────────────────
