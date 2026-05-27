@@ -30,6 +30,10 @@
       --text: #111827;
       --text-secondary: #6b7280;
       --border: #e5e7eb;
+      --status-a-bg: #dbeafe; --status-a-text: #1e40af;
+      --status-b-bg: #d1fae5; --status-b-text: #065f46;
+      --section-hdr-bg: #f9fafb;
+      --focus-ring: rgba(26,86,219,0.12);
       --radius: 12px;
       --radius-sm: 8px;
       --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
@@ -193,7 +197,7 @@
       border-radius: 20px; margin-left: 8px; white-space: nowrap;
     }
     .badge-sale { background: #fef3c7; color: #92400e; }
-    .badge-technical { background: #dbeafe; color: #1e40af; }
+    .badge-technical { background: var(--primary-light); color: var(--primary); }
 
     .card-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; margin-top: 8px; }
     .meta-item { display: flex; flex-direction: column; gap: 2px; }
@@ -243,7 +247,7 @@
     }
     .form-input:focus, .form-textarea:focus, .form-select:focus {
       border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(26,86,219,0.12);
+      box-shadow: 0 0 0 3px var(--focus-ring);
     }
     .form-input.has-error, .form-textarea.has-error, .form-select.has-error {
       border-color: var(--danger);
@@ -324,8 +328,8 @@
       -webkit-tap-highlight-color: transparent;
     }
     .export-choice-btn:active { background: var(--border); }
-    .export-choice-btn.pdf   { border-color: #bfdbfe; background: #eff6ff; }
-    .export-choice-btn.image { border-color: #a7f3d0; background: #ecfdf5; }
+    .export-choice-btn.pdf   { border-color: var(--primary); background: var(--primary-light); }
+    .export-choice-btn.image { border-color: var(--status-b-text); background: var(--status-b-bg); }
     .export-choice-btn.each  { border-color: #fde68a; background: #fffbeb; }
 
     /* ===== HOME ACTION BAR & GRID (Prompt 10.1) ===== */
@@ -377,7 +381,7 @@
     }
     .proj-grid-card.is-expanded {
       border-color: var(--primary);
-      background: #f0f4ff;
+      background: var(--primary-light);
     }
     .proj-grid-card:active { opacity: 0.65; }
     .proj-grid-name {
@@ -397,8 +401,8 @@
     .proj-grid-dot {
       width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
     }
-    .proj-grid-dot.surveying { background: #3b82f6; }
-    .proj-grid-dot.ready     { background: #10b981; }
+    .proj-grid-dot.surveying { background: var(--status-a-text); }
+    .proj-grid-dot.ready     { background: var(--status-b-text); }
     /* Ô placeholder giữ đủ 3 cột khi hàng cuối không đủ */
     .proj-grid-pad {
       min-height: 76px; background: transparent; border: 1.5px solid transparent;
@@ -442,10 +446,10 @@
       min-width: 20px; height: 20px; padding: 0 6px;
     }
     .project-group-badge.ready {
-      background: #d1fae5; color: #065f46;
+      background: var(--status-b-bg); color: var(--status-b-text);
     }
     .project-group-badge.surveying {
-      background: #dbeafe; color: #1e40af;
+      background: var(--status-a-bg); color: var(--status-a-text);
     }
 
     /* Hàng tiêu đề công trình */
@@ -511,10 +515,10 @@
       word-break: break-word;
     }
     .proj-summary-value.status-surveying {
-      color: #1d4ed8;
+      color: var(--status-a-text);
     }
     .proj-summary-value.status-ready {
-      color: #065f46;
+      color: var(--status-b-text);
     }
 
     /* Nút Vào chi tiết */
@@ -543,11 +547,11 @@
       padding: 24px; z-index: 300;
     }
     .modal-box {
-      background: white; border-radius: 16px; padding: 24px;
+      background: var(--bg-card); border-radius: 16px; padding: 24px;
       width: 100%; max-width: 320px; box-shadow: 0 20px 60px rgba(0,0,0,0.2);
     }
     .modal-icon { font-size: 36px; text-align: center; margin-bottom: 12px; }
-    .modal-title { font-size: 17px; font-weight: 700; text-align: center; margin-bottom: 8px; }
+    .modal-title { font-size: 17px; font-weight: 700; text-align: center; margin-bottom: 8px; color: var(--text); }
     .modal-desc { font-size: 14px; color: var(--text-secondary); text-align: center; margin-bottom: 20px; }
     .modal-btns { display: flex; gap: 10px; }
 
@@ -588,7 +592,7 @@
       font-size: 11px; font-weight: 700; color: var(--text-secondary);
       text-transform: uppercase; letter-spacing: 0.8px;
       padding: 12px 16px 10px; border-bottom: 1px solid var(--border);
-      background: #fafafa;
+      background: var(--section-hdr-bg);
     }
     .info-row {
       display: flex; align-items: flex-start;
@@ -616,7 +620,7 @@
     .photo-section-header {
       display: flex; align-items: center; justify-content: space-between;
       padding: 12px 16px; border-bottom: 1px solid var(--border);
-      background: #fafafa;
+      background: var(--section-hdr-bg);
     }
     .photo-section-title {
       font-size: 11px; font-weight: 700; color: var(--text-secondary);
@@ -686,7 +690,7 @@
       display: flex; align-items: flex-end;
     }
     .photo-menu-sheet {
-      width: 100%; background: #fff; border-radius: 18px 18px 0 0;
+      width: 100%; background: var(--bg-card); border-radius: 18px 18px 0 0;
       padding: 4px 16px max(28px, env(safe-area-inset-bottom));
       animation: slideUpMenu 0.2s ease;
     }
@@ -695,7 +699,7 @@
       to   { transform: translateY(0);    opacity:1; }
     }
     .photo-menu-handle {
-      width: 36px; height: 4px; background: #d1d5db; border-radius: 2px;
+      width: 36px; height: 4px; background: var(--border); border-radius: 2px;
       margin: 10px auto 14px;
     }
     .photo-menu-title {
@@ -736,7 +740,7 @@
     .photo-thumb-card.selected {
       outline: 3px solid var(--primary);
       outline-offset: -3px;
-      background: #eff6ff;
+      background: var(--primary-light);
     }
     .photo-select-ring {
       position: absolute; top: 6px; right: 6px;
@@ -758,7 +762,7 @@
     /* Thanh hành động cố định đáy màn hình */
     .selection-action-bar {
       position: fixed; bottom: 0; left: 0; right: 0;
-      background: #fff; border-top: 2px solid var(--primary);
+      background: var(--bg-card); border-top: 2px solid var(--primary);
       padding: 10px 12px max(14px, calc(10px + env(safe-area-inset-bottom)));
       display: flex; flex-direction: column; gap: 8px;
       z-index: 900; box-shadow: 0 -4px 20px rgba(0,0,0,0.12);
@@ -808,7 +812,7 @@
     .btn-select-mode {
       padding: 6px 12px; border-radius: 16px; font-size: 13px; font-weight: 600;
       border: 1.5px solid var(--primary); color: var(--primary);
-      background: #fff; cursor: pointer;
+      background: var(--bg-card); cursor: pointer;
     }
     .btn-select-mode.active {
       background: var(--primary); color: #fff;
@@ -961,7 +965,7 @@
     }
     .size-input:focus {
       border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(26,86,219,0.12);
+      box-shadow: 0 0 0 3px var(--focus-ring);
     }
     .size-sep {
       font-size: 20px; font-weight: 700; color: var(--text-secondary);
@@ -1135,7 +1139,7 @@
       margin-bottom: 7px;
     }
     .tag-item-row.hidden-tag {
-      background: #f9fafb; opacity: 0.75;
+      background: var(--bg); opacity: 0.75;
     }
     .tag-item-name {
       flex: 1; font-size: 14px; color: var(--text);
@@ -1176,7 +1180,7 @@
       padding: 24px;
     }
     .tag-delete-modal {
-      background: #fff; border-radius: var(--radius);
+      background: var(--bg-card); border-radius: var(--radius);
       padding: 22px 20px 16px;
       max-width: 320px; width: 100%;
       box-shadow: 0 8px 32px rgba(0,0,0,0.18);
@@ -1197,7 +1201,7 @@
     }
     .tag-delete-modal-actions .btn-cancel-delete {
       padding: 9px 18px; font-size: 14px; font-weight: 600;
-      background: #f3f4f6; color: var(--text);
+      background: var(--bg); color: var(--text);
       border: none; border-radius: var(--radius-sm);
       cursor: pointer; font-family: inherit;
     }
@@ -1230,7 +1234,7 @@
     }
     .tag-edit-cancel {
       padding: 5px 10px; font-size: 12px; font-weight: 600;
-      background: #e5e7eb; color: var(--text);
+      background: var(--border); color: var(--text);
       border: none; border-radius: 6px; cursor: pointer; font-family: inherit;
     }
 
@@ -1264,7 +1268,7 @@
     .tag-drag-handle {
       flex-shrink: 0;
       font-size: 15px;
-      color: #bbb;
+      color: var(--border);
       cursor: grab;
       padding: 4px 6px 4px 2px;
       touch-action: none;
@@ -1281,7 +1285,7 @@
     }
     /* SortableJS chosen — phần tử đang được giữ */
     .tag-item-row.sortable-chosen {
-      box-shadow: 0 4px 12px rgba(26,86,219,0.18);
+      box-shadow: 0 4px 12px var(--focus-ring);
       border-color: var(--primary);
       background: #fff;
       opacity: 0.95;
@@ -1302,9 +1306,9 @@
       font-size: 12px; font-weight: 500; color: var(--text-secondary);
       cursor: pointer; font-family: inherit; text-align: left;
     }
-    .tag-hidden-toggle:active { background: #f3f4f6; }
+    .tag-hidden-toggle:active { background: var(--bg); }
     .tag-hidden-count {
-      background: #f3f4f6; color: var(--text-secondary);
+      background: var(--bg); color: var(--text-secondary);
       font-size: 11px; font-weight: 700;
       padding: 1px 6px; border-radius: 10px;
     }
@@ -1337,7 +1341,7 @@
       aspect-ratio: 4/3;
       object-fit: cover;
       display: block;
-      background: #e5e7eb;
+      background: var(--border);
     }
 
     .photo-thumb-info {
@@ -1357,12 +1361,12 @@
       align-self: flex-start;
     }
     .thumb-status-line.survey {
-      color: #1d4ed8;
-      background: #dbeafe;
+      color: var(--status-a-text);
+      background: var(--status-a-bg);
     }
     .thumb-status-line.production {
-      color: #065f46;
-      background: #d1fae5;
+      color: var(--status-b-text);
+      background: var(--status-b-bg);
     }
 
     /* Dòng text thông tin chung — cho phép xuống dòng, không truncate */
@@ -1381,7 +1385,7 @@
       color: var(--text-secondary);
     }
     .thumb-empty {
-      color: #ccc;
+      color: var(--border);
       font-style: italic;
     }
 
@@ -1519,24 +1523,36 @@
         '--bg': '#f3f4f6', '--bg-card': '#ffffff',
         '--text': '#111827', '--text-secondary': '#6b7280', '--border': '#e5e7eb',
         '--primary': '#1a56db', '--primary-dark': '#1346b8', '--primary-light': '#e8f0fe',
+        '--status-a-bg': '#dbeafe', '--status-a-text': '#1e40af',
+        '--status-b-bg': '#d1fae5', '--status-b-text': '#065f46',
+        '--section-hdr-bg': '#f9fafb', '--focus-ring': 'rgba(26,86,219,0.12)',
       },
       // Theme Đen — giao diện tối
       dark: {
         '--bg': '#0f172a', '--bg-card': '#1e293b',
         '--text': '#f1f5f9', '--text-secondary': '#94a3b8', '--border': '#334155',
         '--primary': '#60a5fa', '--primary-dark': '#3b82f6', '--primary-light': '#1e3a5f',
+        '--status-a-bg': '#1e3a5f', '--status-a-text': '#93c5fd',
+        '--status-b-bg': '#064e3b', '--status-b-text': '#6ee7b7',
+        '--section-hdr-bg': '#0f172a', '--focus-ring': 'rgba(96,165,250,0.20)',
       },
       // Theme Cam — gam màu cam ấm
       orange: {
         '--bg': '#fff7ed', '--bg-card': '#fffbf7',
         '--text': '#1c1917', '--text-secondary': '#78716c', '--border': '#fdba74',
         '--primary': '#ea580c', '--primary-dark': '#c2410c', '--primary-light': '#ffedd5',
+        '--status-a-bg': '#ffedd5', '--status-a-text': '#c2410c',
+        '--status-b-bg': '#fef3c7', '--status-b-text': '#92400e',
+        '--section-hdr-bg': '#fff7ed', '--focus-ring': 'rgba(234,88,12,0.12)',
       },
       // Theme Xanh lá — gam màu xanh lá cây
       green: {
         '--bg': '#f0fdf4', '--bg-card': '#f7fef9',
         '--text': '#14532d', '--text-secondary': '#4d7c5f', '--border': '#86efac',
         '--primary': '#16a34a', '--primary-dark': '#15803d', '--primary-light': '#dcfce7',
+        '--status-a-bg': '#dcfce7', '--status-a-text': '#15803d',
+        '--status-b-bg': '#bbf7d0', '--status-b-text': '#14532d',
+        '--section-hdr-bg': '#f0fdf4', '--focus-ring': 'rgba(22,163,74,0.12)',
       },
     };
     // Migration: key 'blue' cũ → 'green' mới
@@ -4475,7 +4491,7 @@
               </div>
               <div style={{display:'flex', flexDirection:'column', gap:9}}>
                 <button className="export-choice-btn"
-                  style={{background:'#f0fdf4', border:'1.5px solid #86efac'}}
+                  style={{background:'var(--primary-light)', border:'1.5px solid var(--border)'}}
                   onClick={() => onExport(selType, 'single', null)}>
                   <span style={{fontSize:20}}>📄</span>
                   <div>
@@ -4484,7 +4500,7 @@
                   </div>
                 </button>
                 <button className="export-choice-btn"
-                  style={{background:'#eff6ff', border:'1.5px solid #93c5fd'}}
+                  style={{background:'var(--primary-light)', border:'1.5px solid var(--primary)'}}
                   onClick={() => onExport(selType, 'multi', null)}>
                   <span style={{fontSize:20}}>📑</span>
                   <div>
@@ -4540,13 +4556,13 @@
             <div style={{display:'flex', flexDirection:'column', gap:10}}>
               {/* Radio: toàn bộ */}
               <label style={{display:'flex', alignItems:'center', gap:10, padding:'10px 12px',
-                background: indivMode==='all' ? '#eff6ff' : '#f9fafb',
-                border: '1.5px solid ' + (indivMode==='all' ? '#93c5fd' : '#e5e7eb'),
+                background: indivMode==='all' ? 'var(--primary-light)' : 'var(--bg)',
+                border: '1.5px solid ' + (indivMode==='all' ? 'var(--primary)' : 'var(--border)'),
                 borderRadius:8, cursor:'pointer'}}>
                 <input type="radio" name="indivMode" value="all"
                   checked={indivMode === 'all'}
                   onChange={() => { setIndivMode('all'); setSttError(''); }}
-                  style={{accentColor:'#2563eb', width:16, height:16}} />
+                  style={{accentColor:'var(--primary)', width:16, height:16}} />
                 <div>
                   <div style={{fontWeight:700, fontSize:14}}>Xuất toàn bộ ảnh</div>
                   <div style={{fontSize:11, color:'var(--text-secondary)'}}>
@@ -4556,13 +4572,13 @@
               </label>
               {/* Radio: tùy chọn STT */}
               <label style={{display:'flex', alignItems:'center', gap:10, padding:'10px 12px',
-                background: indivMode==='custom' ? '#eff6ff' : '#f9fafb',
-                border: '1.5px solid ' + (indivMode==='custom' ? '#93c5fd' : '#e5e7eb'),
+                background: indivMode==='custom' ? 'var(--primary-light)' : 'var(--bg)',
+                border: '1.5px solid ' + (indivMode==='custom' ? 'var(--primary)' : 'var(--border)'),
                 borderRadius:8, cursor:'pointer'}}>
                 <input type="radio" name="indivMode" value="custom"
                   checked={indivMode === 'custom'}
                   onChange={() => { setIndivMode('custom'); setSttError(''); }}
-                  style={{accentColor:'#2563eb', width:16, height:16}} />
+                  style={{accentColor:'var(--primary)', width:16, height:16}} />
                 <div>
                   <div style={{fontWeight:700, fontSize:14}}>Tùy chọn STT ảnh</div>
                   <div style={{fontSize:11, color:'var(--text-secondary)'}}>Nhập STT ảnh cần xuất</div>
