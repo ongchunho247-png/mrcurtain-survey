@@ -934,3 +934,42 @@ error         : fatal: cannot lock ref 'HEAD': Unable to create 'C:/Claude Code/
 Another git process seems to be running in this repository, or the lock file may be stale
 message       : fix: dark theme gam toi thuan, xoa icon thua, header theo theme
 ============================================================
+
+────────────────────────────────────────────────────────────
+[21:40:03 27/5/2026] ✅  DEPLOY THÀNH CÔNG
+Commit  : fix: dark theme gam toi thuan, xoa icon thua, header theo theme
+Branch  : main
+Hash    : 96aae41 fix: dark theme gam toi thuan, xoa icon thua, header theo theme
+Remote  : https://github.com/ongchunho247-png/mrcurtain-survey.git
+Netlify : tự deploy từ branch main (~30 giây)
+────────────────────────────────────────────────────────────
+
+============================================================
+[21:50:14 27/5/2026] ❌  LỖI DEPLOY
+Lý do : git add thất bại
+error         : fatal: Unable to create '/sessions/pensive-bold-bardeen/mnt/web app mobile khao sat/.git/index.lock': File exists.
+
+Another git process seems to be running in this repository, e.g.
+an editor opened by 'git commit'. Please make sure all processes
+are terminated then try again. If it still fails, a git process
+may have crashed in this repository earlier:
+remove the file manually to continue.
+files         : M fix-git-lock.bat
+ M index.html
+ M logs/diagnose-log.txt
+============================================================
+
+============================================================
+[21:50:20 27/5/2026] ❌  LỖI DEPLOY
+Lý do : git add thất bại
+error         : fatal: Unable to create '/sessions/pensive-bold-bardeen/mnt/web app mobile khao sat/.git/index.lock': File exists.
+
+Another git process seems to be running in this repository, e.g.
+an editor opened by 'git commit'. Please make sure all processes
+are terminated then try again. If it still fails, a git process
+may have crashed in this repository earlier:
+remove the file manually to continue.
+files         : M fix-git-lock.bat
+ M index.html
+ M logs/diagnose-log.txt
+============================================================

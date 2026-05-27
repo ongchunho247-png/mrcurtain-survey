@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- MrCurtain Survey | Prompt 14.6 | build: 2026-05-27 -->
-<!-- APP_PROMPT_VERSION = "P15" —— chỉ sửa tại đây khi lên version mới -->
+<!-- APP_PROMPT_VERSION = "P16" —— chỉ sửa tại đây khi lên version mới -->
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
@@ -1492,7 +1492,7 @@
     // =============================================
     // STORAGE UTILS
     // =============================================
-    const APP_PROMPT_VERSION = 'P15'; // Cập nhật khi lên version mới
+    const APP_PROMPT_VERSION = 'P16'; // Cập nhật khi lên version mới
     const STORAGE_KEY = 'mrcurtain_survey_projects';
     const STORAGE_KEY_LEGACY = 'mrcurtain_projects'; // key cũ từ Prompt 2
     // Khai báo sớm để runDataMigration() dùng được (Prompt 14.2)
@@ -2971,7 +2971,7 @@
                 {/* Thống kê ảnh */}
                 <div className="proj-summary-item">
                   <span className="proj-summary-label">Tổng ảnh</span>
-                  <span className="proj-summary-value">📷 {totalActiveImages}</span>
+                  <span className="proj-summary-value">{totalActiveImages}</span>
                 </div>
 
                 <div className="proj-summary-item">
@@ -2980,12 +2980,12 @@
                 </div>
 
                 <div className="proj-summary-item">
-                  <span className="proj-summary-label">📋 Khảo sát</span>
+                  <span className="proj-summary-label">Khảo sát</span>
                   <span className="proj-summary-value">{surveyImages}</span>
                 </div>
 
                 <div className="proj-summary-item">
-                  <span className="proj-summary-label">🏭 Sản xuất</span>
+                  <span className="proj-summary-label">Sản xuất</span>
                   <span className="proj-summary-value">{productionImages}</span>
                 </div>
 
@@ -3196,18 +3196,18 @@
                             </div>
                             <div className="proj-summary-item">
                               <span className="proj-summary-label">Tổng ảnh</span>
-                              <span className="proj-summary-value">📷 {prog.totalActiveImages}</span>
+                              <span className="proj-summary-value">{prog.totalActiveImages}</span>
                             </div>
                             <div className="proj-summary-item">
                               <span className="proj-summary-label">Trạng thái</span>
                               <span className={`proj-summary-value ${groupCls}`}>{groupLabel}</span>
                             </div>
                             <div className="proj-summary-item">
-                              <span className="proj-summary-label">📋 Khảo sát</span>
+                              <span className="proj-summary-label">Khảo sát</span>
                               <span className="proj-summary-value">{prog.surveyImages}</span>
                             </div>
                             <div className="proj-summary-item">
-                              <span className="proj-summary-label">🏭 Sản xuất</span>
+                              <span className="proj-summary-label">Sản xuất</span>
                               <span className="proj-summary-value">{prog.productionImages}</span>
                             </div>
                           </div>
@@ -3256,7 +3256,7 @@
           <div className="page-content">
             {projects.length === 0 ? (
               <div className="empty-state">
-                <div className="empty-icon">📋</div>
+                <div className="empty-icon"></div>
                 <div className="empty-title">Chưa có công trình nào</div>
                 <div className="empty-desc">
                   Bấm <strong>"Tạo mới"</strong> phía trên để tạo hồ sơ khảo sát đầu tiên.
@@ -3454,7 +3454,7 @@
               <h1>Thông tin ảnh</h1>
             </header>
             <div className="not-found-screen">
-              <div style={{fontSize:'48px', opacity:0.25}}>🔍</div>
+              
               <div style={{fontSize:'17px', fontWeight:700}}>Không tìm thấy ảnh</div>
               <div style={{fontSize:'14px', color:'var(--text-secondary)'}}>
                 Ảnh này có thể đã bị xóa hoặc dữ liệu bị lỗi.
@@ -3516,7 +3516,7 @@
             disabled={replacing || saving}
             onClick={() => replaceInputRef.current && replaceInputRef.current.click()}
           >
-            {replacing ? '⏳ Đang xử lý ảnh...' : '🔄  Thay ảnh'}
+            {replacing ? 'Đang xử lý ảnh...' : 'Thay ảnh'}
           </button>
 
           {/* Form */}
@@ -3524,7 +3524,7 @@
 
             {/* ── Tình trạng ── */}
             <div className="idf-section">
-              <div className="idf-section-title">🏷️ Tình trạng</div>
+              <div className="idf-section-title">Tình trạng</div>
               <div className="chip-group">
                 <div className="chips-wrap">
                   <button
@@ -3549,7 +3549,7 @@
 
             {/* ── Vị trí (ordered multi-select) ── */}
             <div className="idf-section">
-              <div className="idf-section-title">📍 Vị trí <span className="idf-hint">Chọn nhiều, theo thứ tự</span></div>
+              <div className="idf-section-title">Vị trí <span className="idf-hint">Chọn nhiều, theo thứ tự</span></div>
               <div className="chip-group">
                 <div className="chips-wrap">
                   {getTagsByGroup('position').map(tag => {
@@ -3573,7 +3573,7 @@
 
             {/* ── Loại rèm (ordered multi-select) ── */}
             <div className="idf-section">
-              <div className="idf-section-title">🪟 Loại rèm <span className="idf-hint">Chọn nhiều, theo thứ tự</span></div>
+              <div className="idf-section-title">Loại rèm <span className="idf-hint">Chọn nhiều, theo thứ tự</span></div>
               <div className="chip-group">
                 <div className="chips-wrap">
                   {getTagsByGroup('curtainType').map(tag => {
@@ -3597,7 +3597,7 @@
 
             {/* ── Quy cách sản phẩm (ordered multi-select) ── */}
             <div className="idf-section">
-              <div className="idf-section-title">📦 Quy cách sản phẩm <span className="idf-hint">Chọn nhiều, theo thứ tự</span></div>
+              <div className="idf-section-title">Quy cách sản phẩm <span className="idf-hint">Chọn nhiều, theo thứ tự</span></div>
               <div className="chip-group">
                 <div className="chips-wrap">
                   {getTagsByGroup('productSpec').map(tag => {
@@ -3643,7 +3643,7 @@
 
             {/* ── Kích thước ── */}
             <div className="idf-section">
-              <div className="idf-section-title">📐 Kích thước</div>
+              <div className="idf-section-title">Kích thước</div>
               <div className="size-row">
                 <div className="size-input-wrap">
                   <div className="size-input-label">Ngang</div>
@@ -3672,7 +3672,7 @@
 
             {/* ── Ghi chú thêm ── */}
             <div className="idf-section">
-              <div className="idf-section-title">📝 Ghi chú thêm</div>
+              <div className="idf-section-title">Ghi chú thêm</div>
               <textarea
                 className="form-textarea"
                 placeholder="Nhập ghi chú thêm nếu có..."
@@ -3768,7 +3768,7 @@
 
             {/* Dòng 1: Tình trạng */}
             <span className={`thumb-status-line${isProduction ? ' production' : ' survey'}`}>
-              {isProduction ? '🏭' : '📋'} Tình trạng: <strong>{statusLabel}</strong>
+              Tình trạng: <strong>{statusLabel}</strong>
             </span>
 
             {/* Dòng 2: vị trí */}
@@ -3803,12 +3803,12 @@
 
             {/* Dòng 5: kích thước */}
             <span className={`thumb-size-text${!size ? ' empty' : ''}`}>
-              📐 {size || 'Chưa có kích thước'}
+              {size || 'Chưa có kích thước'}
             </span>
 
             {/* Dòng 6: ghi chú (chỉ hiện nếu có) */}
             {img.notes && (
-              <span className="thumb-notes-text">📝 {img.notes}</span>
+              <span className="thumb-notes-text">{img.notes}</span>
             )}
 
             {/* Dòng 7: ngày */}
@@ -4034,11 +4034,9 @@
               <div className="photo-menu-handle"></div>
               <div className="photo-menu-title">Thêm ảnh khảo sát</div>
               <button className="photo-menu-btn" onClick={handleLibraryClick}>
-                <span className="photo-menu-btn-icon">🖼️</span>
                 Chọn từ thư viện ảnh
               </button>
               <button className="photo-menu-btn" onClick={handleCameraClick}>
-                <span className="photo-menu-btn-icon">📷</span>
                 Chụp ảnh bằng camera
               </button>
               <button className="photo-menu-cancel" onClick={() => setShowPhotoMenu(false)}>
@@ -4075,7 +4073,7 @@
               className="btn-show-deleted"
               onClick={() => setShowDeleted(v => !v)}
             >
-              <span style={{fontSize:'13px', opacity:0.6}}>🗑</span>
+              
               <span className="deleted-label">
                 Ảnh đã xóa ({deletedCount})
               </span>
@@ -4125,7 +4123,7 @@
                           </button>
                           <button className="btn-perm-delete"
                             onClick={() => setConfirmPermDelete(img.imageId)}>
-                            🗑 Xóa vĩnh viễn
+                            Xóa vĩnh viễn
                           </button>
                         </div>
                       </div>
@@ -4177,7 +4175,7 @@
           {!adding && imgCount === 0 && (
             <>
               <div className="photo-empty">
-                <div className="photo-empty-icon">🖼️</div>
+                <div className="photo-empty-icon"></div>
                 <div className="photo-empty-title">Chưa có ảnh khảo sát nào</div>
                 <div className="photo-empty-desc">
                   Bấm nút bên dưới để thêm ảnh.<br/>
@@ -4221,7 +4219,7 @@
           {confirmDelete && (
             <div className="modal-overlay" onClick={() => setConfirmDelete(null)}>
               <div className="modal-box" onClick={e => e.stopPropagation()}>
-                <div className="modal-icon">🗑️</div>
+                
                 <div className="modal-title">Xóa ảnh này?</div>
                 <div className="modal-desc">
                   Ảnh sẽ được chuyển vào mục Ảnh đã xóa và có thể khôi phục.
@@ -4274,17 +4272,17 @@
               <button className="btn-sel pdf"
                 disabled={selectedImageIds.length === 0}
                 onClick={() => handleBulkExport('pdf')}>
-                📄 In PDF
+                In PDF
               </button>
               <button className="btn-sel zip"
                 disabled={selectedImageIds.length === 0}
                 onClick={() => handleBulkExport('individual')}>
-                🖼 Xuất ảnh
+                Xuất ảnh
               </button>
               <button className="btn-sel del"
                 disabled={selectedImageIds.length === 0}
                 onClick={() => setConfirmBulkDelete(true)}>
-                🗑 Xóa
+                Xóa
               </button>
             </div>
           </div>
@@ -4294,7 +4292,7 @@
         {confirmBulkDelete && (
           <div className="modal-overlay" onClick={() => setConfirmBulkDelete(false)}>
             <div className="modal-box" onClick={e => e.stopPropagation()}>
-              <div className="modal-icon">🗑️</div>
+              
               <div className="modal-title">Xóa ảnh đã chọn?</div>
               <div className="modal-desc">
                 Bạn đang chọn <strong>{selectedImageIds.length} ảnh</strong>.
@@ -4364,7 +4362,7 @@
       return (
         <div className="modal-overlay" onClick={onClose}>
           <div className="modal-box" onClick={e => e.stopPropagation()}>
-            <div style={{fontSize:36, textAlign:'center', marginBottom:6}}>✅</div>
+            
             <div className="modal-title" style={{textAlign:'center'}}>Xuất file thành công!</div>
             <div style={{
               fontSize:12, color:'var(--text-secondary)', textAlign:'center',
@@ -4374,15 +4372,15 @@
             </div>
             <div className="share-result-actions">
               <button className="btn btn-primary btn-full" onClick={handleDownload}>
-                📥 Tải file xuống
+                Tải file xuống
               </button>
               {canShareFiles ? (
                 <button className="btn btn-secondary btn-full" onClick={handleShare}>
-                  📤 Chia sẻ qua Zalo / ứng dụng khác
+                  Chia sẻ qua Zalo / ứng dụng khác
                 </button>
               ) : (
                 <div className="share-fallback-tip">
-                  💡 Thiết bị chưa hỗ trợ chia sẻ file trực tiếp.<br/>
+                  Thiết bị chưa hỗ trợ chia sẻ file trực tiếp.<br/>
                   Nhấn <strong>Tải file xuống</strong> trước, sau đó mở file và gửi qua Zalo.
                 </div>
               )}
@@ -4419,11 +4417,11 @@
       const [sttError,   setSttError]  = React.useState('');
 
       const statusMap = {
-        'pdf-single':    '📋 Đang tạo PDF (1 trang)...',
-        'pdf-multi':     '📋 Đang tạo PDF (nhiều trang)...',
-        'image-single':  '🖼️ Đang tạo ảnh báo cáo...',
-        'image-multi':   '🖼️ Đang tạo ảnh báo cáo...',
-        'individual-zip':'🗜️ Đang chuẩn bị file ZIP...',
+        'pdf-single':    'Đang tạo PDF (1 trang)...',
+        'pdf-multi':     'Đang tạo PDF (nhiều trang)...',
+        'image-single':  'Đang tạo ảnh báo cáo...',
+        'image-multi':   'Đang tạo ảnh báo cáo...',
+        'individual-zip':'Đang chuẩn bị file ZIP...',
       };
 
       /* ── Loading overlay — fallback hiển thị chuỗi progress ── */
@@ -4448,11 +4446,10 @@
         return (
           <div className="modal-overlay" onClick={onClose}>
             <div className="modal-box" onClick={e => e.stopPropagation()}>
-              <div className="modal-title" style={{marginBottom:14}}>📄 Chọn kiểu xuất báo cáo</div>
+              <div className="modal-title" style={{marginBottom:14}}>Chọn kiểu xuất báo cáo</div>
               <div style={{display:'flex', flexDirection:'column', gap:9}}>
                 <button className="export-choice-btn pdf"
                   onClick={() => { setSelType('pdf'); setStep('layout'); }}>
-                  <span style={{fontSize:20}}>📋</span>
                   <div>
                     <div style={{fontWeight:700}}>Xuất PDF</div>
                     <div style={{fontSize:11, opacity:0.75}}>File .pdf — in hoặc gửi được</div>
@@ -4460,7 +4457,6 @@
                 </button>
                 <button className="export-choice-btn image"
                   onClick={() => { setSelType('image'); setStep('layout'); }}>
-                  <span style={{fontSize:20}}>🖼️</span>
                   <div>
                     <div style={{fontWeight:700}}>Xuất ảnh báo cáo</div>
                     <div style={{fontSize:11, opacity:0.75}}>File .png — dễ chia sẻ qua Zalo/chat</div>
@@ -4468,7 +4464,6 @@
                 </button>
                 <button className="export-choice-btn each"
                   onClick={() => { setIndivMode('all'); setSttInput(''); setSttError(''); setStep('individual-select'); }}>
-                  <span style={{fontSize:20}}>📷</span>
                   <div>
                     <div style={{fontWeight:700}}>Xuất từng ảnh khảo sát</div>
                     <div style={{fontSize:11, opacity:0.75}}>Mỗi ảnh kèm thông tin — gom vào file ZIP</div>
@@ -4488,7 +4483,7 @@
         return (
           <div className="modal-overlay" onClick={onClose}>
             <div className="modal-box" onClick={e => e.stopPropagation()}>
-              <div className="modal-title" style={{marginBottom:4}}>📐 Chọn kiểu dàn trang</div>
+              <div className="modal-title" style={{marginBottom:4}}>Chọn kiểu dàn trang</div>
               <div style={{fontSize:12, color:'var(--text-secondary)', marginBottom:14}}>
                 Xuất {typeLabel}
               </div>
@@ -4496,7 +4491,6 @@
                 <button className="export-choice-btn"
                   style={{background:'var(--primary-light)', border:'1.5px solid var(--border)'}}
                   onClick={() => onExport(selType, 'single', null)}>
-                  <span style={{fontSize:20}}>📄</span>
                   <div>
                     <div style={{fontWeight:700}}>In trong 1 trang</div>
                     <div style={{fontSize:11, opacity:0.75}}>Toàn bộ nội dung gọn trong 1 khung</div>
@@ -4505,7 +4499,6 @@
                 <button className="export-choice-btn"
                   style={{background:'var(--primary-light)', border:'1.5px solid var(--primary)'}}
                   onClick={() => onExport(selType, 'multi', null)}>
-                  <span style={{fontSize:20}}>📑</span>
                   <div>
                     <div style={{fontWeight:700}}>Dàn sang nhiều trang</div>
                     <div style={{fontSize:11, opacity:0.75}}>Mỗi card ảnh liền mạch, không bị cắt trang</div>
@@ -4555,7 +4548,7 @@
       return (
         <div className="modal-overlay" onClick={onClose}>
           <div className="modal-box" onClick={e => e.stopPropagation()}>
-            <div className="modal-title" style={{marginBottom:14}}>🗂️ Chọn ảnh cần xuất</div>
+            <div className="modal-title" style={{marginBottom:14}}>Chọn ảnh cần xuất</div>
             <div style={{display:'flex', flexDirection:'column', gap:10}}>
               {/* Radio: toàn bộ */}
               <label style={{display:'flex', alignItems:'center', gap:10, padding:'10px 12px',
@@ -4606,7 +4599,7 @@
               )}
               <button className="btn btn-primary btn-full" onClick={handleExportIndividual}
                 style={{marginTop:2}}>
-                📦 Xuất ảnh
+                Xuất ảnh
               </button>
             </div>
             <button className="btn btn-secondary btn-full" style={{marginTop:10}}
@@ -4663,7 +4656,7 @@
               <h1>Chi tiết công trình</h1>
             </header>
             <div className="not-found-screen">
-              <div style={{fontSize:'56px', opacity:0.25}}>🔍</div>
+              
               <div style={{fontSize:'17px', fontWeight:700}}>Không tìm thấy công trình</div>
               <div style={{fontSize:'14px', color:'var(--text-secondary)', lineHeight:1.5}}>
                 Công trình này có thể đã bị xóa hoặc dữ liệu bị lỗi.
@@ -4951,7 +4944,6 @@
           <div className="detail-hero">
             <div className="detail-hero-name">{project.projectName}</div>
             <div className="detail-hero-customer">
-              <span>👤</span>
               <span>{project.customerName}</span>
             </div>
             <div className="detail-hero-badges">
@@ -4959,7 +4951,7 @@
                 {getDeptLabel(project.department)}
               </span>
               <span className="hero-badge">
-                📅 {formatDate(project.surveyDate)}
+                {formatDate(project.surveyDate)}
               </span>
             </div>
           </div>
@@ -4974,7 +4966,7 @@
                 onClick={() => setInfoExpanded(v => !v)}
                 style={{borderBottom: infoExpanded ? '1px solid var(--border)' : 'none'}}
               >
-                <div className="info-section-toggle-title">📍 Thông tin</div>
+                <div className="info-section-toggle-title">Thông tin</div>
                 {!infoExpanded && (
                   <div className="info-section-toggle-preview">{project.projectName}</div>
                 )}
@@ -4986,21 +4978,21 @@
                 <div>
                   {/* Thông tin công trình */}
                   <div className="info-row">
-                    <span className="info-row-icon">🏗</span>
+                    
                     <div className="info-row-body">
                       <div className="info-row-label">Tên công trình</div>
                       <div className="info-row-value">{project.projectName}</div>
                     </div>
                   </div>
                   <div className="info-row">
-                    <span className="info-row-icon">👤</span>
+                    
                     <div className="info-row-body">
                       <div className="info-row-label">Khách hàng</div>
                       <div className="info-row-value">{project.customerName}</div>
                     </div>
                   </div>
                   <div className="info-row">
-                    <span className="info-row-icon">🙋</span>
+                    
                     <div className="info-row-body">
                       <div className="info-row-label">Người liên hệ</div>
                       <div className={`info-row-value${!project.contactPerson ? ' empty' : ''}`}>
@@ -5009,7 +5001,7 @@
                     </div>
                   </div>
                   <div className="info-row">
-                    <span className="info-row-icon">📞</span>
+                    
                     <div className="info-row-body">
                       <div className="info-row-label">Số điện thoại</div>
                       <div className={`info-row-value${!project.contactPhone ? ' empty' : ''}`}>
@@ -5018,7 +5010,7 @@
                     </div>
                   </div>
                   <div className="info-row">
-                    <span className="info-row-icon">📍</span>
+                    
                     <div className="info-row-body">
                       <div className="info-row-label">Địa chỉ</div>
                       <div className={`info-row-value${!project.address ? ' empty' : ''}`}>
@@ -5032,24 +5024,24 @@
                     margin:'4px 0 0', borderTop:'1px solid var(--border)',
                     padding:'10px 14px 4px'
                   }}>
-                    👤 Thông tin khảo sát
+                    Thông tin khảo sát
                   </div>
                   <div className="info-row">
-                    <span className="info-row-icon">🧑‍💼</span>
+                    
                     <div className="info-row-body">
                       <div className="info-row-label">Người khảo sát</div>
                       <div className="info-row-value">{project.surveyPerson}</div>
                     </div>
                   </div>
                   <div className="info-row">
-                    <span className="info-row-icon">🏢</span>
+                    
                     <div className="info-row-body">
                       <div className="info-row-label">Bộ phận</div>
                       <div className="info-row-value">{getDeptLabel(project.department)}</div>
                     </div>
                   </div>
                   <div className="info-row">
-                    <span className="info-row-icon">📅</span>
+                    
                     <div className="info-row-body">
                       <div className="info-row-label">Ngày khảo sát</div>
                       <div className="info-row-value">{formatDate(project.surveyDate)}</div>
@@ -5063,10 +5055,10 @@
                         margin:'4px 0 0', borderTop:'1px solid var(--border)',
                         padding:'10px 14px 4px'
                       }}>
-                        📝 Ghi chú chung
+                        Ghi chú chung
                       </div>
                       <div className="info-row">
-                        <span className="info-row-icon">💬</span>
+                        
                         <div className="info-row-body">
                           <div className="info-row-value" style={{whiteSpace:'pre-wrap', fontStyle:'italic'}}>
                             {project.generalNote}
@@ -5111,7 +5103,7 @@
               <div className="export-loading-box">
                 <div style={{fontSize:32, marginBottom:10}}>⏳</div>
                 <div style={{fontSize:14, fontWeight:600}}>
-                  {exporting.startsWith('Đang') ? exporting : '🗜️ Đang chuẩn bị file ZIP...'}
+                  {exporting.startsWith('Đang') ? exporting : 'Đang chuẩn bị file ZIP...'}
                 </div>
                 <div style={{fontSize:12, color:'var(--text-secondary)', marginTop:6}}>
                   Vui lòng chờ, không tắt ứng dụng
@@ -5233,7 +5225,7 @@
 
             {/* Section 1 */}
             <div className="form-section">
-              <div className="form-section-title">📍 Thông tin công trình</div>
+              <div className="form-section-title">Thông tin công trình</div>
 
               <div className="form-group">
                 <label className="form-label" htmlFor="projectName">
@@ -5294,7 +5286,7 @@
 
             {/* Section 2 */}
             <div className="form-section">
-              <div className="form-section-title">👤 Thông tin khảo sát</div>
+              <div className="form-section-title">Thông tin khảo sát</div>
 
               <div className="form-group">
                 <label className="form-label" htmlFor="surveyPerson">
@@ -5317,14 +5309,14 @@
                       type="radio" id="dept-sale" name="department" value="sale"
                       checked={form.department === 'sale'} onChange={handleChange}
                     />
-                    <label htmlFor="dept-sale"><span>💼</span> Sale</label>
+                    <label htmlFor="dept-sale">Sale</label>
                   </div>
                   <div className="dept-option">
                     <input
                       type="radio" id="dept-technical" name="department" value="technical"
                       checked={form.department === 'technical'} onChange={handleChange}
                     />
-                    <label htmlFor="dept-technical"><span>🔧</span> Kỹ thuật</label>
+                    <label htmlFor="dept-technical">Kỹ thuật</label>
                   </div>
                 </div>
               </div>
@@ -5344,7 +5336,7 @@
 
             {/* Section 3 */}
             <div className="form-section">
-              <div className="form-section-title">📝 Ghi chú chung</div>
+              <div className="form-section-title">Ghi chú chung</div>
               <div className="form-group">
                 <label className="form-label" htmlFor="generalNote">Ghi chú</label>
                 <textarea
@@ -5583,7 +5575,7 @@
                       <span className="tag-drag-handle">☰</span>
                       <span className="tag-name">{tag.tagName}</span>
                       <div className="tag-row-actions">
-                        <button className="btn-tag-edit"   onClick={() => startEdit(tag)}>✏️</button>
+                        <button className="btn-tag-edit"   onClick={() => startEdit(tag)}>Sửa</button>
                         <button className="btn-tag-hide"   onClick={() => handleHide(tag.tagId)}>👁</button>
                         <button className="btn-tag-delete" onClick={() => setConfirmDeleteTagId(tag.tagId)}>🗑</button>
                       </div>
