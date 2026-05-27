@@ -973,3 +973,12 @@ files         : M fix-git-lock.bat
  M index.html
  M logs/diagnose-log.txt
 ============================================================
+
+────────────────────────────────────────────────────────────
+[21:53:57 27/5/2026] ✅  DEPLOY THÀNH CÔNG
+Commit  : P16: xoa toan bo icon emoji, chi giu lai 🏷️ va ⚙️
+Branch  : main
+Hash    : bbec87b P16: xoa toan bo icon emoji, chi giu lai 🏷️ va ⚙️
+Remote  : https://github.com/ongchunho247-png/mrcurtain-survey.git
+Netlify : tự deploy từ branch main (~30 giây)
+────────────────────────────────────────────────────────────
