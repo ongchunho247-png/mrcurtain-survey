@@ -60,6 +60,54 @@
       background: var(--bg);
     }
 
+    /* ===== SETTINGS ===== */
+    .settings-screen { padding: 0; }
+    .settings-section {
+      background: var(--bg-card); border-radius: var(--radius);
+      box-shadow: var(--shadow); margin: 12px; overflow: hidden;
+    }
+    .settings-section-title {
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.8px; color: var(--text-secondary);
+      padding: 12px 16px 8px; border-bottom: 1px solid var(--border);
+    }
+    .settings-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 16px; border-bottom: 1px solid var(--border);
+    }
+    .settings-row:last-child { border-bottom: none; }
+    .settings-row-label { font-size: 14px; color: var(--text); }
+    .settings-color-group { display: flex; gap: 10px; }
+    .settings-color-swatch {
+      width: 32px; height: 32px; border-radius: 50%;
+      border: 2.5px solid transparent; cursor: pointer;
+      transition: transform 0.15s, border-color 0.15s;
+    }
+    .settings-color-swatch.active { border-color: var(--primary); transform: scale(1.15); }
+    .settings-input {
+      width: 100%; padding: 10px 12px;
+      border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+      font-size: 14px; font-family: inherit; background: var(--bg);
+      color: var(--text); outline: none;
+    }
+    .settings-input:focus { border-color: var(--primary); }
+    .settings-input-wrap { padding: 12px 16px; }
+    .btn-settings {
+      background: none; border: none; color: white; cursor: pointer;
+      font-size: 20px; padding: 4px 6px; line-height: 1;
+      -webkit-tap-highlight-color: transparent; opacity: 0.9;
+    }
+    .btn-settings:active { opacity: 0.6; }
+    .export-loading-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+      display: flex; align-items: center; justify-content: center; z-index: 500;
+    }
+    .export-loading-box {
+      background: var(--bg-card); border-radius: var(--radius);
+      padding: 28px 32px; text-align: center; min-width: 220px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    }
+
     /* ===== HEADER ===== */
     .page-header {
       background: var(--primary);
@@ -1445,7 +1493,33 @@
     // Khai báo sớm để runDataMigration() dùng được (Prompt 14.2)
     const IMAGES_KEY = 'mrcurtain_survey_images';
     const TAGS_KEY   = 'mrcurtain_survey_tags';
-    const VIEW_KEY   = 'mrcurtain_survey_current_view';
+    const VIEW_KEY      = 'mrcurtain_survey_current_view';
+    const SETTINGS_KEY  = 'mrcurtain_survey_settings';
+
+    const SETTINGS_DEFAULT = { backgroundColor: 'white', userName: '' };
+    function getSettings() {
+      try {
+        const raw = localStorage.getItem(SETTINGS_KEY);
+        if (!raw) return { ...SETTINGS_DEFAULT };
+        return { ...SETTINGS_DEFAULT, ...JSON.parse(raw) };
+      } catch { return { ...SETTINGS_DEFAULT }; }
+    }
+    function saveSettings(patch) {
+      try {
+        const current = getSettings();
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...current, ...patch }));
+      } catch (e) { console.warn('[Settings] Lỗi lưu:', e); }
+    }
+    const THEMES = {
+      white:  { '--bg': '#f3f4f6', '--bg-card': '#ffffff', '--text': '#111827', '--text-secondary': '#6b7280', '--border': '#e5e7eb' },
+      dark:   { '--bg': '#111827', '--bg-card': '#1f2937', '--text': '#f9fafb', '--text-secondary': '#9ca3af', '--border': '#374151' },
+      orange: { '--bg': '#fff7ed', '--bg-card': '#ffffff', '--text': '#1c1917', '--text-secondary': '#78716c', '--border': '#fed7aa' },
+      blue:   { '--bg': '#eff6ff', '--bg-card': '#ffffff', '--text': '#1e3a5f', '--text-secondary': '#4b6280', '--border': '#bfdbfe' },
+    };
+    function applyTheme(bgColor) {
+      const theme = THEMES[bgColor] || THEMES.white;
+      Object.entries(theme).forEach(([k, v]) => document.documentElement.style.setProperty(k, v));
+    }
 
     // --- Logger có cấu trúc (in ra console theo format log template) ---
     function storageLog(level, screen, action, description, detail = null) {
@@ -2900,8 +2974,70 @@
       );
     }
 
+    /* --- Settings Screen --- */
+    function SettingsScreen({ onBack }) {
+      const [settings, setSettings] = useState(getSettings);
+      function handleColorChange(color) {
+        const next = { ...settings, backgroundColor: color };
+        setSettings(next);
+        saveSettings({ backgroundColor: color });
+        applyTheme(color);
+      }
+      function handleUserNameChange(e) {
+        const val = e.target.value;
+        setSettings(s => ({ ...s, userName: val }));
+        saveSettings({ userName: val });
+      }
+      const swatches = [
+        { key: 'white',  label: 'Trắng', bg: '#f3f4f6', border: '#d1d5db' },
+        { key: 'dark',   label: 'Đen',   bg: '#111827', border: '#374151' },
+        { key: 'orange', label: 'Cam',   bg: '#fed7aa', border: '#fb923c' },
+        { key: 'blue',   label: 'Xanh',  bg: '#bfdbfe', border: '#3b82f6' },
+      ];
+      return (
+        <div className="app-container">
+          <header className="page-header">
+            <button className="btn-back" onClick={onBack}>‹</button>
+            <h1>Cài đặt</h1>
+          </header>
+          <div className="settings-screen page-content">
+            <div className="settings-section">
+              <div className="settings-section-title">Màu nền ứng dụng</div>
+              <div className="settings-row">
+                <span className="settings-row-label">Chọn màu nền</span>
+                <div className="settings-color-group">
+                  {swatches.map(sw => (
+                    <div key={sw.key}
+                      className={`settings-color-swatch${settings.backgroundColor === sw.key ? ' active' : ''}`}
+                      style={{ background: sw.bg, borderColor: settings.backgroundColor === sw.key ? 'var(--primary)' : sw.border }}
+                      title={sw.label}
+                      onClick={() => handleColorChange(sw.key)}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="settings-section">
+              <div className="settings-section-title">Thông tin người dùng</div>
+              <div className="settings-input-wrap">
+                <label style={{fontSize:13, color:'var(--text-secondary)', display:'block', marginBottom:6}}>
+                  Tên người dùng (tự điền "Người khảo sát" khi tạo công trình)
+                </label>
+                <input className="settings-input" type="text"
+                  placeholder="Nhập tên người dùng"
+                  value={settings.userName}
+                  onChange={handleUserNameChange}
+                  maxLength={60}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     /* --- Project List Screen  (Prompt 10: 2 nhóm + accordion) --- */
-    function ProjectList({ onCreateNew, onSelectProject, onOpenTagManager }) {
+    function ProjectList({ onCreateNew, onSelectProject, onOpenTagManager, onOpenSettings }) {
       const [projects, setProjects] = useState([]);
       // imageVersion: tăng khi nhận imagesUpdated → buộc recompute progress
       const [imageVersion, setImageVersion] = useState(0);
@@ -3049,6 +3185,7 @@
                 <span className="header-version-badge">P14.6</span>
               </div>
             </div>
+            <button className="btn-settings" onClick={onOpenSettings} title="Cài đặt">⚙️</button>
           </header>
 
           {/* Action bar gọn: đếm + 2 nút nhỏ */}
@@ -4966,7 +5103,10 @@
     };
 
     function ProjectForm({ onBack, onSaved }) {
-      const [form, setForm] = useState({...INITIAL});
+      const [form, setForm] = useState(() => {
+        const s = getSettings();
+        return { ...INITIAL, surveyPerson: s.userName || '' };
+      });
       const [errors, setErrors] = useState({});
       const [saving, setSaving] = useState(false);
       const [showConfirm, setShowConfirm] = useState(false);
@@ -5486,6 +5626,7 @@
        APP — Router chính
     ───────────────────────────────────────────── */
     function App() {
+      React.useMemo(() => { applyTheme(getSettings().backgroundColor); }, []);
       const initial = restoreCurrentView();
       const [screen,             setScreen]             = useState(initial.screen);
       const [selectedProjectId,  setSelectedProjectId]  = useState(initial.selectedProjectId);
@@ -5610,6 +5751,10 @@
             onBack={handleBack}
           />
         );
+      }
+
+      if (screen === 'settings') {
+        return <SettingsScreen onBack={handleBack} />;
       }
 
       // Mặc định: màn hình danh sách công trình

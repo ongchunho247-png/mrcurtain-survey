@@ -844,3 +844,12 @@ Hash    : 5cda8a9 feat: dieu huong back bang swipe tren mobile
 Remote  : https://github.com/ongchunho247-png/mrcurtain-survey.git
 Netlify : tự deploy từ branch main (~30 giây)
 ────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────
+[17:43:49 27/5/2026] ✅  DEPLOY THÀNH CÔNG
+Commit  : feat: setting va sua xuat anh chon loc
+Branch  : main
+Hash    : 23a291b feat: setting va sua xuat anh chon loc
+Remote  : https://github.com/ongchunho247-png/mrcurtain-survey.git
+Netlify : tự deploy từ branch main (~30 giây)
+────────────────────────────────────────────────────────────
