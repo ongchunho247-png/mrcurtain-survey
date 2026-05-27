@@ -3823,29 +3823,24 @@
         )}
 
         <div className="photo-section">
-          {/* Header */}
-          <div className="photo-section-header">
-            <div className="photo-section-title">
-              <span>📷</span>
-              <span>Ảnh khảo sát</span>
-              <span className="photo-count-badge">{imgCount}</span>
-            </div>
-            <div style={{display:'flex', gap:6, alignItems:'center'}}>
-              {imgCount > 0 && !isSelectionMode && (
-                <button className="btn-add-photo-sm" onClick={handleAddClick} disabled={adding}>
-                  <span>＋</span> Thêm ảnh
-                </button>
-              )}
-              {imgCount > 0 && (
+          {/* Header — chỉ hiện khi có ảnh */}
+          {(imgCount > 0 || isSelectionMode) && (
+            <div className="photo-section-header" style={{justifyContent:'flex-end'}}>
+              <div style={{display:'flex', gap:6, alignItems:'center'}}>
+                {!isSelectionMode && (
+                  <button className="btn-add-photo-sm" onClick={handleAddClick} disabled={adding}>
+                    <span>＋</span> Thêm ảnh
+                  </button>
+                )}
                 <button
                   className={`btn-select-mode${isSelectionMode ? ' active' : ''}`}
                   onClick={isSelectionMode ? exitSelectionMode : enterSelectionMode}
                 >
                   {isSelectionMode ? 'Hủy chọn' : 'Chọn ảnh'}
                 </button>
-              )}
+              </div>
             </div>
-          </div>
+          )}
           {/* Thanh chọn tất cả — chỉ hiện khi ở chế độ chọn */}
           {isSelectionMode && imgCount > 0 && (
             <div className="selection-header-row">
@@ -4872,11 +4867,6 @@
             {/* ══════════════════════════════════════
                 ẢNH KHẢO SÁT  — PhotoSection
             ══════════════════════════════════════ */}
-            {/* ── Xuất báo cáo ── */}
-            <button className="export-btn" onClick={() => setShowExportModal(true)}>
-              <span style={{fontSize:16}}>📤</span> Xuất báo cáo
-            </button>
-
             <PhotoSection
               projectId={project.projectId}
               onSelectImage={onSelectImage}
