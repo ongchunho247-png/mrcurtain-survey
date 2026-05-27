@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <!-- MrCurtain Survey | Prompt 14.6 | build: 2026-05-27 -->
+<!-- APP_PROMPT_VERSION = "P14.6" —— chỉ sửa tại đây khi lên version mới -->
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
@@ -742,18 +743,17 @@
     /* Spacer tránh content bị action bar che */
     .selection-bar-spacer { height: 130px; }
 
-    /* Version badge — không cản thao tác (Prompt 14.6) */
-    .version-badge {
-      position: fixed;
-      bottom: max(14px, calc(8px + env(safe-area-inset-bottom)));
-      right: 12px;
-      font-size: 11px; font-weight: 600;
-      color: rgba(0,0,0,0.45);
-      background: rgba(255,255,255,0.72);
-      padding: 2px 6px; border-radius: 8px;
-      border: 1px solid rgba(0,0,0,0.12);
-      pointer-events: none; z-index: 9999;
+    /* Version badge — hiển thị trong header trang chủ (Prompt 14.6) */
+    .header-version-badge {
+      display: inline-block;
+      margin-left: 6px;
+      background: rgba(255,255,255,0.22);
+      color: rgba(255,255,255,0.9);
+      font-size: 10px; font-weight: 700;
+      padding: 1px 5px; border-radius: 4px;
+      vertical-align: middle;
       font-family: monospace; user-select: none;
+      letter-spacing: 0.02em;
     }
 
     /* Header photo-section khi ở chế độ chọn */
@@ -3046,11 +3046,7 @@
             <div style={{flex:1}}>
               <h1>MrCurtain Survey</h1>
               <div className="header-subtitle">Hệ thống khảo sát công trình
-                <span style={{
-                  marginLeft:6, background:'rgba(255,255,255,0.25)',
-                  fontSize:10, fontWeight:700, padding:'1px 5px',
-                  borderRadius:4, verticalAlign:'middle',
-                }}>P10</span>
+                <span className="header-version-badge">P14.6</span>
               </div>
             </div>
           </header>
@@ -5532,15 +5528,7 @@
 
     // ── Mount ──────────────────────────────────────────────────
     const rootEl = document.getElementById('root');
-    function AppWithBadge() {
-      return (
-        <>
-          <App />
-          <div className="version-badge">P14.6</div>
-        </>
-      );
-    }
-    ReactDOM.createRoot(rootEl).render(<AppWithBadge />);
+    ReactDOM.createRoot(rootEl).render(<App />);
   </script>
 </body>
 </html>
