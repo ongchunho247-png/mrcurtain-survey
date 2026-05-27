@@ -808,3 +808,12 @@ Hash    : 0543e86 chore: chuyen version len header trang chu
 Remote  : https://github.com/ongchunho247-png/mrcurtain-survey.git
 Netlify : tự deploy từ branch main (~30 giây)
 ────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────
+[17:05:08 27/5/2026] ✅  DEPLOY THÀNH CÔNG
+Commit  : fix: dua xuat bao cao vao che do chon anh
+Branch  : main
+Hash    : 7189eb0 fix: dua xuat bao cao vao che do chon anh
+Remote  : https://github.com/ongchunho247-png/mrcurtain-survey.git
+Netlify : tự deploy từ branch main (~30 giây)
+────────────────────────────────────────────────────────────

@@ -3553,7 +3553,8 @@
       return (
         <div
           className={`photo-thumb-card${isSelected ? ' selected' : ''}`}
-          onClick={() => isSelectionMode ? onToggleSelect(img.imageId) : onSelect(img.imageId)}
+          data-image-id={img.imageId}
+          onClick={() => { if (!isSelectionMode) onSelect(img.imageId); }}
           role="button"
           aria-label={isSelectionMode ? `${isSelected ? 'Bỏ chọn' : 'Chọn'} ảnh ${idx + 1}` : `Xem thông tin ảnh ${idx + 1}`}
           style={{cursor:'pointer'}}
@@ -3796,6 +3797,51 @@
         exitSelectionMode();
       }
 
+      // ── Chọn ảnh bằng trượt tay (Prompt 14.7) ──
+      const dragSelectRef = React.useRef({ ready: false, active: false, startX: 0, startY: 0, startImageId: null, addedIds: new Set() });
+
+      function handleGridPointerDown(e) {
+        if (!isSelectionMode) return;
+        const card = e.target.closest('[data-image-id]');
+        if (!card) return;
+        e.preventDefault();
+        dragSelectRef.current = {
+          ready: true, active: false,
+          startX: e.clientX, startY: e.clientY,
+          startImageId: card.dataset.imageId,
+          addedIds: new Set([card.dataset.imageId]),
+        };
+      }
+
+      function handleGridPointerMove(e) {
+        if (!isSelectionMode || !dragSelectRef.current.ready) return;
+        const dx = e.clientX - dragSelectRef.current.startX;
+        const dy = e.clientY - dragSelectRef.current.startY;
+        if (!dragSelectRef.current.active && Math.hypot(dx, dy) > 8) {
+          dragSelectRef.current.active = true;
+          const sid = dragSelectRef.current.startImageId;
+          setSelectedImageIds(prev => prev.includes(sid) ? prev : [...prev, sid]);
+        }
+        if (!dragSelectRef.current.active) return;
+        const el = document.elementFromPoint(e.clientX, e.clientY);
+        if (!el) return;
+        const card = el.closest('[data-image-id]');
+        if (!card) return;
+        const imageId = card.dataset.imageId;
+        if (dragSelectRef.current.addedIds.has(imageId)) return;
+        dragSelectRef.current.addedIds.add(imageId);
+        setSelectedImageIds(prev => prev.includes(imageId) ? prev : [...prev, imageId]);
+      }
+
+      function handleGridPointerUp(e) {
+        if (!isSelectionMode) return;
+        const { ready, active, startImageId } = dragSelectRef.current;
+        if (ready && !active && startImageId) {
+          toggleSelect(startImageId);
+        }
+        dragSelectRef.current = { ready: false, active: false, startX: 0, startY: 0, startImageId: null, addedIds: new Set() };
+      }
+
             const imgCount     = images.length;
       const deletedCount = deletedImages.length;
 
@@ -3978,7 +4024,14 @@
 
           {/* Grid thumbnail ảnh active */}
           {imgCount > 0 && (
-            <div className="photo-grid">
+            <div
+              className="photo-grid"
+              onPointerDown={handleGridPointerDown}
+              onPointerMove={handleGridPointerMove}
+              onPointerUp={handleGridPointerUp}
+              onPointerCancel={handleGridPointerUp}
+              style={isSelectionMode ? {touchAction:'none'} : undefined}
+            >
               {images.map((img, idx) => (
                 <PhotoThumbCard
                   key={img.imageId}
