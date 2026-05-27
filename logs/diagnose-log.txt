@@ -741,3 +741,34 @@ Lỗi terminal   : N/A
 Lỗi browser    : N/A
 Trạng thái     : [x] Đã xử lý
 --------------------------------------------------
+
+============================================================
+[10:47:09 27/5/2026] ❌  LỖI DEPLOY
+Lý do : Validate thất bại — không deploy
+validate log  : 🔍  Bắt đầu kiểm tra trước khi deploy...
+
+📁  File bắt buộc:
+  ✅  index.html
+  ✅  manifest.json
+  ✅  icon-192.png
+  ✅  icon-512.png
+  ✅  netlify.toml
+
+📄  Nội dung index.html:
+  ✅  Kích thước >= 100 KB
+  ✅  Có thẻ <!DOCTYPE html>
+  ✅  Có thẻ <script> React CDN
+  ✅  Có </script> cuối cùng
+  ✅  Không có localStorage.clear()
+  ✅  Có STORAGE_KEY mrcurtain_survey_projects
+  ✅  Có DATA_VERSION — bảo vệ migration
+  ✅  Có runDataMigration()
+
+📋  manifest.json:
+  ✅  JSON hợp lệ
+  ✅  Có trường "name"
+  ✅  Có trường "icons"
+
+────────────────────────────────────────────────
+commit msg    : chore: them comment version Prompt 14.4
+============================================================

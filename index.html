@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- MrCurtain Survey | Prompt 14.4 | build: 2026-05-27 -->
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
@@ -680,6 +681,83 @@
     .share-fallback-tip {
       background: #fef9c3; border: 1px solid #fde047; border-radius: 8px;
       padding: 10px 12px; font-size: 12px; color: #713f12; line-height: 1.6;
+    }
+
+    /* ── Chế độ chọn ảnh (Prompt 14.5) ─────────────────── */
+    .photo-thumb-card.selected {
+      outline: 3px solid var(--primary);
+      outline-offset: -3px;
+      background: #eff6ff;
+    }
+    .photo-select-ring {
+      position: absolute; top: 6px; right: 6px;
+      width: 26px; height: 26px; border-radius: 50%;
+      border: 2.5px solid rgba(0,0,0,0.25);
+      background: rgba(255,255,255,0.82);
+      z-index: 5; pointer-events: none;
+    }
+    .photo-select-check {
+      position: absolute; top: 6px; right: 6px;
+      width: 26px; height: 26px; border-radius: 50%;
+      background: var(--primary); border: 2px solid #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; color: #fff; z-index: 5;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.28);
+      pointer-events: none;
+    }
+
+    /* Thanh hành động cố định đáy màn hình */
+    .selection-action-bar {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: #fff; border-top: 2px solid var(--primary);
+      padding: 10px 12px calc(12px + env(safe-area-inset-bottom));
+      display: flex; flex-direction: column; gap: 8px;
+      z-index: 900; box-shadow: 0 -4px 20px rgba(0,0,0,0.12);
+    }
+    .selection-count-row {
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .selection-count-text {
+      font-size: 14px; font-weight: 700; color: var(--primary);
+    }
+    .btn-deselect-all {
+      font-size: 13px; color: var(--text-secondary);
+      background: none; border: none; cursor: pointer;
+      text-decoration: underline; padding: 0 4px;
+    }
+    .selection-action-row {
+      display: flex; gap: 8px;
+    }
+    .btn-sel {
+      flex: 1; padding: 11px 4px; border-radius: var(--radius-sm);
+      font-size: 13px; font-weight: 700; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 5px;
+      border: 1.5px solid;
+    }
+    .btn-sel:disabled { opacity: 0.35; cursor: not-allowed; }
+    .btn-sel.pdf  { color: #1a56db; border-color: #1a56db; background: #eff6ff; }
+    .btn-sel.zip  { color: #047857; border-color: #047857; background: #ecfdf5; }
+    .btn-sel.del  { color: #e02424; border-color: #e02424; background: #fff5f5; }
+    .btn-sel.exit { color: var(--text-secondary); border-color: var(--border); background: var(--bg); flex: none; padding: 11px 14px; }
+    /* Spacer tránh content bị action bar che */
+    .selection-bar-spacer { height: 130px; }
+
+    /* Header photo-section khi ở chế độ chọn */
+    .btn-select-mode {
+      padding: 6px 12px; border-radius: 16px; font-size: 13px; font-weight: 600;
+      border: 1.5px solid var(--primary); color: var(--primary);
+      background: #fff; cursor: pointer;
+    }
+    .btn-select-mode.active {
+      background: var(--primary); color: #fff;
+    }
+    .selection-header-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 6px 12px 4px; gap: 8px;
+    }
+    .btn-select-all-sm {
+      font-size: 12px; color: var(--primary); background: none;
+      border: none; cursor: pointer; text-decoration: underline; padding: 2px 4px;
     }
 
     /* Placeholder card cho ảnh tương lai */
@@ -2542,7 +2620,7 @@
        Tạo HTML string cho báo cáo. opts = { singlePage: bool }
        Mỗi card ảnh có data-card-idx để tính vị trí khi chia trang PDF.
     ─────────────────────────────────────────────────────────────────────── */
-    function buildReportHTML(project, images, opts) {
+    function buildReportHTML(project, images, opts, sttList) {
       const today     = new Date().toLocaleDateString('vi-VN');
       const total     = images.length;
       const prodCount = images.filter(i => i.status === 'production').length;
@@ -2590,7 +2668,7 @@
       const imagesHTML = total === 0
         ? '<p style="text-align:center;color:#6b7280;font-style:italic;padding:18px">Chưa có ảnh khảo sát</p>'
         : images.map(function(img, idx) {
-            const stt  = idx + 1;
+            const stt  = (sttList && sttList[idx] != null) ? sttList[idx] : idx + 1;
             const isP  = img.status === 'production';
             const sBg  = isP ? '#d1fae5' : '#dbeafe';
             const sClr = isP ? '#065f46' : '#1d4ed8';
@@ -3452,7 +3530,7 @@
     }
 
     /* --- Thumbnail card với tóm tắt thông tin --- */
-    function PhotoThumbCard({ img, idx, onSelect, onDelete }) {
+    function PhotoThumbCard({ img, idx, onSelect, onDelete, isSelectionMode, isSelected, onToggleSelect }) {
       const size         = sizeLabel(img);
       const isProduction = img.status === 'production';
       const statusLabel  = isProduction ? 'Sản xuất' : 'Khảo sát';
@@ -3464,21 +3542,27 @@
 
       return (
         <div
-          className="photo-thumb-card"
-          onClick={() => onSelect(img.imageId)}
+          className={`photo-thumb-card${isSelected ? ' selected' : ''}`}
+          onClick={() => isSelectionMode ? onToggleSelect(img.imageId) : onSelect(img.imageId)}
           role="button"
-          aria-label={`Xem thông tin ảnh ${idx + 1}`}
+          aria-label={isSelectionMode ? `${isSelected ? 'Bỏ chọn' : 'Chọn'} ảnh ${idx + 1}` : `Xem thông tin ảnh ${idx + 1}`}
           style={{cursor:'pointer'}}
         >
           {/* Badge STT — góc trên trái */}
           <span className="photo-thumb-stt">{idx + 1}</span>
 
-          {/* Nút xóa — góc trên phải */}
-          <button
-            className="photo-thumb-delete"
-            onClick={e => { e.stopPropagation(); onDelete(img.imageId); }}
-            aria-label="Xóa ảnh"
-          >✕</button>
+          {/* Nút xóa hoặc vòng chọn — góc trên phải */}
+          {isSelectionMode ? (
+            isSelected
+              ? <span className="photo-select-check">✓</span>
+              : <span className="photo-select-ring"></span>
+          ) : (
+            <button
+              className="photo-thumb-delete"
+              onClick={e => { e.stopPropagation(); onDelete(img.imageId); }}
+              aria-label="Xóa ảnh"
+            >✕</button>
+          )}
 
           {/* Ảnh */}
           <img
@@ -3543,7 +3627,7 @@
       );
     }
 
-    function PhotoSection({ projectId, onSelectImage }) {
+    function PhotoSection({ projectId, onSelectImage, onExportSelected }) {
       const [images, setImages]               = useState([]);
       const [deletedImages, setDeletedImages] = useState([]);
       const [adding, setAdding]               = useState(false);
@@ -3554,6 +3638,10 @@
       const fileInputRef   = React.useRef(null);   // thư viện ảnh
       const cameraInputRef = React.useRef(null);   // camera
       const [showPhotoMenu, setShowPhotoMenu] = useState(false);
+      // ── Chế độ chọn nhiều ảnh (Prompt 14.5) ──
+      const [isSelectionMode, setIsSelectionMode] = useState(false);
+      const [selectedImageIds, setSelectedImageIds] = useState([]);
+      const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
 
       // Load ảnh active (isDeleted !== true)
       const loadImages = () => setImages(getImages(projectId));
@@ -3671,7 +3759,34 @@
         setConfirmPermDelete(null);
       }
 
-      const imgCount     = images.length;
+      // ── Handlers chọn nhiều ảnh (Prompt 14.5) ──
+      function enterSelectionMode() { setIsSelectionMode(true); setSelectedImageIds([]); }
+      function exitSelectionMode()  { setIsSelectionMode(false); setSelectedImageIds([]); setConfirmBulkDelete(false); }
+      function toggleSelect(imageId) {
+        setSelectedImageIds(prev =>
+          prev.includes(imageId) ? prev.filter(id => id !== imageId) : [...prev, imageId]
+        );
+      }
+      function selectAll()   { setSelectedImageIds(images.map(img => img.imageId)); }
+      function deselectAll() { setSelectedImageIds([]); }
+      function handleBulkExport(type) {
+        if (!selectedImageIds.length) return;
+        onExportSelected && onExportSelected(type, selectedImageIds);
+        exitSelectionMode();
+      }
+      function handleBulkDeleteConfirm() {
+        const toDelete = [...selectedImageIds];
+        toDelete.forEach(id => {
+          try { softDeleteImage(id, projectId); }
+          catch (err) { storageLog('ERROR', 'chi-tiết', 'handleBulkDeleteConfirm()', 'Lỗi xóa mềm hàng loạt', formatError(err)); }
+        });
+        window.dispatchEvent(new Event('imagesUpdated'));
+        loadImages();
+        loadDeletedImages();
+        exitSelectionMode();
+      }
+
+            const imgCount     = images.length;
       const deletedCount = deletedImages.length;
 
       return (
@@ -3705,12 +3820,34 @@
               <span>Ảnh khảo sát</span>
               <span className="photo-count-badge">{imgCount}</span>
             </div>
-            {imgCount > 0 && (
-              <button className="btn-add-photo-sm" onClick={handleAddClick} disabled={adding}>
-                <span>＋</span> Thêm ảnh
-              </button>
-            )}
+            <div style={{display:'flex', gap:6, alignItems:'center'}}>
+              {imgCount > 0 && !isSelectionMode && (
+                <button className="btn-add-photo-sm" onClick={handleAddClick} disabled={adding}>
+                  <span>＋</span> Thêm ảnh
+                </button>
+              )}
+              {imgCount > 0 && (
+                <button
+                  className={`btn-select-mode${isSelectionMode ? ' active' : ''}`}
+                  onClick={isSelectionMode ? exitSelectionMode : enterSelectionMode}
+                >
+                  {isSelectionMode ? 'Hủy chọn' : 'Chọn ảnh'}
+                </button>
+              )}
+            </div>
           </div>
+          {/* Thanh chọn tất cả — chỉ hiện khi ở chế độ chọn */}
+          {isSelectionMode && imgCount > 0 && (
+            <div className="selection-header-row">
+              <span style={{fontSize:13, color:'var(--text-secondary)'}}>
+                Đã chọn <strong>{selectedImageIds.length}</strong> / {imgCount} ảnh
+              </span>
+              <button className="btn-select-all-sm"
+                onClick={selectedImageIds.length === imgCount ? deselectAll : selectAll}>
+                {selectedImageIds.length === imgCount ? 'Bỏ chọn tất cả' : 'Chọn tất cả'}
+              </button>
+            </div>
+          )}
 
           {/* Nút "Ảnh đã xóa" — nhẹ nhàng, trung tính */}
           <div className="photo-deleted-row">
@@ -3844,6 +3981,9 @@
                   idx={idx}
                   onSelect={imageId => onSelectImage && onSelectImage(imageId)}
                   onDelete={imageId => setConfirmDelete(imageId)}
+                  isSelectionMode={isSelectionMode}
+                  isSelected={selectedImageIds.includes(img.imageId)}
+                  onToggleSelect={toggleSelect}
                 />
               ))}
             </div>
@@ -3894,7 +4034,66 @@
               </div>
             </div>
           )}
+
+          {/* ── Spacer tránh content bị action bar che (Prompt 14.5) ── */}
+          {isSelectionMode && <div className="selection-bar-spacer" />}
         </div>
+
+        {/* ── Action bar chế độ chọn nhiều ảnh (Prompt 14.5) ── */}
+        {isSelectionMode && (
+          <div className="selection-action-bar">
+            <div className="selection-count-row">
+              <span className="selection-count-text">
+                ✓ Đã chọn {selectedImageIds.length} ảnh
+              </span>
+              {selectedImageIds.length > 0 && (
+                <button className="btn-deselect-all" onClick={deselectAll}>Bỏ chọn</button>
+              )}
+            </div>
+            <div className="selection-action-row">
+              <button className="btn-sel pdf"
+                disabled={selectedImageIds.length === 0}
+                onClick={() => handleBulkExport('pdf')}>
+                📄 In PDF
+              </button>
+              <button className="btn-sel zip"
+                disabled={selectedImageIds.length === 0}
+                onClick={() => handleBulkExport('individual')}>
+                🖼 Xuất ảnh
+              </button>
+              <button className="btn-sel del"
+                disabled={selectedImageIds.length === 0}
+                onClick={() => setConfirmBulkDelete(true)}>
+                🗑 Xóa
+              </button>
+              <button className="btn-sel exit" onClick={exitSelectionMode}>✕</button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Modal xác nhận XÓA NHIỀU ẢNH (Prompt 14.5) ── */}
+        {confirmBulkDelete && (
+          <div className="modal-overlay" onClick={() => setConfirmBulkDelete(false)}>
+            <div className="modal-box" onClick={e => e.stopPropagation()}>
+              <div className="modal-icon">🗑️</div>
+              <div className="modal-title">Xóa ảnh đã chọn?</div>
+              <div className="modal-desc">
+                Bạn đang chọn <strong>{selectedImageIds.length} ảnh</strong>.
+                Ảnh sẽ được chuyển vào mục Ảnh đã xóa và có thể khôi phục nếu cần.
+              </div>
+              <div className="modal-btns">
+                <button className="btn btn-secondary btn-full" style={{flex:1}}
+                  onClick={() => setConfirmBulkDelete(false)}>
+                  Hủy
+                </button>
+                <button className="btn btn-danger btn-full" style={{flex:1}}
+                  onClick={handleBulkDeleteConfirm}>
+                  Chuyển vào ảnh đã xóa
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         </>
       );
     }
@@ -4284,17 +4483,28 @@
            - Chia canvas thành các trang A4, điều chỉnh điểm cắt để
              không cắt ngang bất kỳ card nào
       ─────────────────────────────────────────────────────────────────── */
-      async function runExport(type, layout, indivOpts) {
+      async function runExport(type, layout, indivOpts, filterImageIds) {
         const exportKey = (type === 'individual') ? 'individual-zip' : (layout ? (type + '-' + layout) : type);
         setExporting(exportKey);
         try {
-          const activeImages = getImages(projectId);
+          let activeImages = getImages(projectId);
+          // Lọc theo ảnh đã chọn (Prompt 14.5) — giữ nguyên STT gốc
+          let sttList = null;
+          if (filterImageIds && filterImageIds.length > 0) {
+            const sttMap = {};
+            activeImages.forEach((img, idx) => { sttMap[img.imageId] = idx + 1; });
+            activeImages = activeImages.filter(img => filterImageIds.includes(img.imageId));
+            sttList = activeImages.map(img => sttMap[img.imageId]);
+          }
 
           /* ── Xuất từng ảnh → gom ZIP có folder tên công trình ── */
           if (type === 'individual') {
             /* Xác định danh sách ảnh cần xuất */
             let exportItems;
-            if (indivOpts && indivOpts.mode === 'custom' && indivOpts.stts) {
+            if (sttList) {
+              // Ảnh đã chọn — giữ STT gốc (Prompt 14.5)
+              exportItems = activeImages.map((img, idx) => ({ img, stt: sttList[idx] }));
+            } else if (indivOpts && indivOpts.mode === 'custom' && indivOpts.stts) {
               exportItems = indivOpts.stts
                 .map(stt => ({ img: activeImages[stt - 1], stt }))
                 .filter(item => item.img != null);
@@ -4369,7 +4579,7 @@
           /* ── Tạo container ẩn ── */
           const container = document.createElement('div');
           container.style.cssText = 'position:fixed;left:-9999px;top:0;width:740px;background:#fff;padding:0;margin:0;z-index:-1;';
-          container.innerHTML = buildReportHTML(project, activeImages, { singlePage: layout === 'single' });
+          container.innerHTML = buildReportHTML(project, activeImages, { singlePage: layout === 'single' }, sttList);
           document.body.appendChild(container);
 
           /* Chờ ảnh load */
@@ -4660,6 +4870,12 @@
             <PhotoSection
               projectId={project.projectId}
               onSelectImage={onSelectImage}
+              onExportSelected={(type, ids) => runExport(
+                type,
+                type === 'pdf' ? 'multi' : null,
+                null,
+                ids
+              )}
             />
 
             {/* Nút quay lại (bottom action) */}

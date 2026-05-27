@@ -43,3 +43,9 @@ node_modules/
 # Thư mục output tạm
 outputs/
 dist/
+
+# Deploy automation — file trung gian Claude dùng để truyền commit message
+scripts/.pending-commit-message
+
+# Log deploy (không cần commit lịch sử log)
+logs/
