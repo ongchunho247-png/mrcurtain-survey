@@ -982,3 +982,41 @@ Hash    : bbec87b P16: xoa toan bo icon emoji, chi giu lai 🏷️ va ⚙️
 Remote  : https://github.com/ongchunho247-png/mrcurtain-survey.git
 Netlify : tự deploy từ branch main (~30 giây)
 ────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────
+[22:06:14 27/5/2026] ✅  DEPLOY THÀNH CÔNG
+Commit  : chore: cap nhat app 27/5/2026
+Branch  : main
+Hash    : 5dd0e5d chore: cap nhat app 27/5/2026
+Remote  : https://github.com/ongchunho247-png/mrcurtain-survey.git
+Netlify : tự deploy từ branch main (~30 giây)
+────────────────────────────────────────────────────────────
+
+============================================================
+[08:19:47 28/5/2026] ❌  LỖI DEPLOY
+Lý do : git add thất bại
+error         : error: bad signature 0x00000000
+fatal: index file corrupt
+warning: unable to unlink '/sessions/pensive-bold-bardeen/mnt/web app mobile khao sat/.git/index.lock': Operation not permitted
+files         : M index.html
+ M logs/diagnose-log.txt
+============================================================
+
+============================================================
+[08:21:28 28/5/2026] ❌  LỖI DEPLOY
+Lý do : Không thể chạy git status
+error         : error: bad signature 0x00000000
+fatal: index file corrupt
+============================================================
+
+============================================================
+[08:22:36 28/5/2026] LỖI DEPLOY
+Ly do : Cannot repair git index
+error         : fatal: Unable to create '/sessions/pensive-bold-bardeen/mnt/web app mobile khao sat/.git/index.lock': File exists.
+
+Another git process seems to be running in this repository, e.g.
+an editor opened by 'git commit'. Please make sure all processes
+are terminated then try again. If it still fails, a git process
+may have crashed in this repository earlier:
+remove the file manually to continue.
+============================================================

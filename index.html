@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- MrCurtain Survey | Prompt 14.6 | build: 2026-05-27 -->
-<!-- APP_PROMPT_VERSION = "P16" —— chỉ sửa tại đây khi lên version mới -->
+<!-- APP_PROMPT_VERSION = "P17" —— chỉ sửa tại đây khi lên version mới -->
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
@@ -33,6 +33,8 @@
       --status-a-bg: #dbeafe; --status-a-text: #1e40af;
       --status-b-bg: #d1fae5; --status-b-text: #065f46;
       --section-hdr-bg: #f9fafb;
+      --header-bg: #1a56db;
+      --group-hdr-bg: #eff6ff;
       --focus-ring: rgba(26,86,219,0.12);
       --radius: 12px;
       --radius-sm: 8px;
@@ -114,7 +116,7 @@
 
     /* ===== HEADER ===== */
     .page-header {
-      background: var(--primary);
+      background: var(--header-bg);
       color: white;
       padding: 16px 20px;
       display: flex;
@@ -136,7 +138,7 @@
 
     /* ===== STATS BAR ===== */
     .stats-bar {
-      background: var(--primary);
+      background: var(--header-bg);
       color: white;
       padding: 10px 20px 14px;
       border-top: 1px solid rgba(255,255,255,0.15);
@@ -338,7 +340,7 @@
     .home-action-bar {
       display: flex; align-items: center; gap: 8px;
       padding: 8px 14px 10px;
-      background: var(--primary);
+      background: var(--header-bg);
       border-top: 1px solid rgba(255,255,255,0.15);
     }
     .home-stats-text {
@@ -432,12 +434,14 @@
     /* Thanh tiêu đề nhóm: Đang khảo sát / Sẵn sàng sản xuất */
     .project-group-header {
       display: flex; align-items: center; gap: 8px;
-      padding: 6px 4px 6px 0;
-      margin-bottom: 6px;
+      padding: 6px 10px;
+      margin-bottom: 8px;
+      background: var(--group-hdr-bg);
+      border-radius: var(--radius-sm);
     }
     .project-group-label {
       font-size: 12px; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.04em; color: var(--text-secondary);
+      letter-spacing: 0.04em; color: var(--primary);
     }
     .project-group-badge {
       display: inline-flex; align-items: center; justify-content: center;
@@ -563,7 +567,7 @@
     /* ===== DETAIL SCREEN ===== */
     /* Hero banner phía trên màn hình chi tiết */
     .detail-hero {
-      background: var(--primary);
+      background: var(--header-bg);
       color: white;
       padding: 0 20px 20px;
     }
@@ -1492,7 +1496,7 @@
     // =============================================
     // STORAGE UTILS
     // =============================================
-    const APP_PROMPT_VERSION = 'P16'; // Cập nhật khi lên version mới
+    const APP_PROMPT_VERSION = 'P17'; // Cập nhật khi lên version mới
     const STORAGE_KEY = 'mrcurtain_survey_projects';
     const STORAGE_KEY_LEGACY = 'mrcurtain_projects'; // key cũ từ Prompt 2
     // Khai báo sớm để runDataMigration() dùng được (Prompt 14.2)
@@ -1519,38 +1523,50 @@
       } catch (e) { console.warn('[Settings] Lỗi lưu:', e); }
     }
     const THEMES = {
-      // Theme Trắng — giao diện sáng mặc định
+      // Theme Trắng — xanh dương, sáng mặc định
+      // Ramp: header #1a56db → group #eff6ff → section #f9fafb → card #fff → page #f3f4f6
       white: {
         '--bg': '#f3f4f6', '--bg-card': '#ffffff',
         '--text': '#111827', '--text-secondary': '#6b7280', '--border': '#e5e7eb',
         '--primary': '#1a56db', '--primary-dark': '#1346b8', '--primary-light': '#e8f0fe',
+        '--header-bg': '#1a56db',
+        '--group-hdr-bg': '#eff6ff',
         '--status-a-bg': '#dbeafe', '--status-a-text': '#1e40af',
         '--status-b-bg': '#d1fae5', '--status-b-text': '#065f46',
         '--section-hdr-bg': '#f9fafb', '--focus-ring': 'rgba(26,86,219,0.12)',
       },
       // Theme Đen — giao diện tối
+      // Ramp: header #1e293b → group #162032 → section #0f172a → card #1e293b → page #0f172a
       dark: {
         '--bg': '#0f172a', '--bg-card': '#1e293b',
         '--text': '#f1f5f9', '--text-secondary': '#94a3b8', '--border': '#334155',
-        '--primary': '#60a5fa', '--primary-dark': '#3b82f6', '--primary-light': '#1e3a5f',
-        '--status-a-bg': '#1e3a5f', '--status-a-text': '#93c5fd',
-        '--status-b-bg': '#064e3b', '--status-b-text': '#6ee7b7',
-        '--section-hdr-bg': '#0f172a', '--focus-ring': 'rgba(96,165,250,0.20)',
+        '--primary': '#94a3b8', '--primary-dark': '#64748b', '--primary-light': '#334155',
+        '--header-bg': '#1e293b',
+        '--group-hdr-bg': '#162032',
+        '--status-a-bg': '#334155', '--status-a-text': '#e2e8f0',
+        '--status-b-bg': '#374151', '--status-b-text': '#d1d5db',
+        '--section-hdr-bg': '#0f172a', '--focus-ring': 'rgba(148,163,184,0.20)',
       },
       // Theme Cam — gam màu cam ấm
+      // Ramp: header #ea580c → group #fff3e0 → section #fff7ed → card #fffbf7 → page #fff7ed
       orange: {
         '--bg': '#fff7ed', '--bg-card': '#fffbf7',
         '--text': '#1c1917', '--text-secondary': '#78716c', '--border': '#fdba74',
         '--primary': '#ea580c', '--primary-dark': '#c2410c', '--primary-light': '#ffedd5',
+        '--header-bg': '#ea580c',
+        '--group-hdr-bg': '#fff3e0',
         '--status-a-bg': '#ffedd5', '--status-a-text': '#c2410c',
         '--status-b-bg': '#fef3c7', '--status-b-text': '#92400e',
         '--section-hdr-bg': '#fff7ed', '--focus-ring': 'rgba(234,88,12,0.12)',
       },
       // Theme Xanh lá — gam màu xanh lá cây
+      // Ramp: header #16a34a → group #ecfdf5 → section #f0fdf4 → card #f7fef9 → page #f0fdf4
       green: {
         '--bg': '#f0fdf4', '--bg-card': '#f7fef9',
         '--text': '#14532d', '--text-secondary': '#4d7c5f', '--border': '#86efac',
         '--primary': '#16a34a', '--primary-dark': '#15803d', '--primary-light': '#dcfce7',
+        '--header-bg': '#16a34a',
+        '--group-hdr-bg': '#ecfdf5',
         '--status-a-bg': '#dcfce7', '--status-a-text': '#15803d',
         '--status-b-bg': '#bbf7d0', '--status-b-text': '#14532d',
         '--section-hdr-bg': '#f0fdf4', '--focus-ring': 'rgba(22,163,74,0.12)',
@@ -4940,21 +4956,6 @@
             )}
           </header>
 
-          {/* ── Hero Banner ── */}
-          <div className="detail-hero">
-            <div className="detail-hero-name">{project.projectName}</div>
-            <div className="detail-hero-customer">
-              <span>{project.customerName}</span>
-            </div>
-            <div className="detail-hero-badges">
-              <span className={`card-badge ${badgeClass}`} style={{fontSize:'12px'}}>
-                {getDeptLabel(project.department)}
-              </span>
-              <span className="hero-badge">
-                {formatDate(project.surveyDate)}
-              </span>
-            </div>
-          </div>
 
           <div className="page-content">
 
