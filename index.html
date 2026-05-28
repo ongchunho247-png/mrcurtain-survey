@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <!-- MrCurtain Survey | Prompt 14.6 | build: 2026-05-27 -->
-<!-- APP_PROMPT_VERSION = "P17" —— chỉ sửa tại đây khi lên version mới -->
+<!-- APP_PROMPT_VERSION = "P18" —— chỉ sửa tại đây khi lên version mới -->
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="theme-color" content="#1a56db" id="meta-theme-color" />
+  <meta name="theme-color" content="#1f2937" id="meta-theme-color" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -20,22 +20,22 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --primary: #1a56db;
-      --primary-dark: #1346b8;
-      --primary-light: #e8f0fe;
+      --primary: #1f2937;
+      --primary-dark: #111827;
+      --primary-light: #f3f4f6;
       --danger: #ef4444;
       --warning: #f59e0b;
-      --bg: #f3f4f6;
+      --bg: #f9fafb;
       --bg-card: #ffffff;
       --text: #111827;
-      --text-secondary: #6b7280;
+      --text-secondary: #4b5563;
       --border: #e5e7eb;
       --status-a-bg: #dbeafe; --status-a-text: #1e40af;
       --status-b-bg: #d1fae5; --status-b-text: #065f46;
       --section-hdr-bg: #f9fafb;
-      --header-bg: #1a56db;
-      --group-hdr-bg: #eff6ff;
-      --focus-ring: rgba(26,86,219,0.12);
+      --header-bg: #1f2937;
+      --group-hdr-bg: #f3f4f6;
+      --focus-ring: rgba(31,41,55,0.12);
       --radius: 12px;
       --radius-sm: 8px;
       --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
@@ -441,7 +441,7 @@
     }
     .project-group-label {
       font-size: 12px; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.04em; color: var(--primary);
+      letter-spacing: 0.04em; color: var(--text);
     }
     .project-group-badge {
       display: inline-flex; align-items: center; justify-content: center;
@@ -477,7 +477,7 @@
       background: var(--bg);
     }
     .proj-accordion-name {
-      font-size: 15px; font-weight: 600; color: var(--text);
+      font-size: 15px; font-weight: 700; color: var(--text);
       flex: 1; min-width: 0;
     }
     .proj-accordion-sub {
@@ -611,7 +611,7 @@
       text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 2px;
     }
     .info-row-value {
-      font-size: 14px; color: var(--text); font-weight: 500;
+      font-size: 14px; color: var(--text); font-weight: 600;
       word-break: break-word; line-height: 1.4;
     }
     .info-row-value.empty { color: var(--text-secondary); font-style: italic; }
@@ -1496,7 +1496,7 @@
     // =============================================
     // STORAGE UTILS
     // =============================================
-    const APP_PROMPT_VERSION = 'P17'; // Cập nhật khi lên version mới
+    const APP_PROMPT_VERSION = 'P18'; // Cập nhật khi lên version mới
     const STORAGE_KEY = 'mrcurtain_survey_projects';
     const STORAGE_KEY_LEGACY = 'mrcurtain_projects'; // key cũ từ Prompt 2
     // Khai báo sớm để runDataMigration() dùng được (Prompt 14.2)
@@ -1523,52 +1523,52 @@
       } catch (e) { console.warn('[Settings] Lỗi lưu:', e); }
     }
     const THEMES = {
-      // Theme Trắng — xanh dương, sáng mặc định
-      // Ramp: header #1a56db → group #eff6ff → section #f9fafb → card #fff → page #f3f4f6
+      // Theme Trắng — header xám đậm trung tính, nội dung trắng sạch
+      // P18: header #1f2937 | card nền trắng | border xám | text đen
       white: {
-        '--bg': '#f3f4f6', '--bg-card': '#ffffff',
-        '--text': '#111827', '--text-secondary': '#6b7280', '--border': '#e5e7eb',
-        '--primary': '#1a56db', '--primary-dark': '#1346b8', '--primary-light': '#e8f0fe',
-        '--header-bg': '#1a56db',
-        '--group-hdr-bg': '#eff6ff',
-        '--status-a-bg': '#dbeafe', '--status-a-text': '#1e40af',
-        '--status-b-bg': '#d1fae5', '--status-b-text': '#065f46',
-        '--section-hdr-bg': '#f9fafb', '--focus-ring': 'rgba(26,86,219,0.12)',
+        '--bg': '#f9fafb', '--bg-card': '#ffffff',
+        '--text': '#111827', '--text-secondary': '#4b5563', '--border': '#e5e7eb',
+        '--primary': '#1f2937', '--primary-dark': '#111827', '--primary-light': '#f3f4f6',
+        '--header-bg': '#1f2937',
+        '--group-hdr-bg': '#f3f4f6',
+        '--status-a-bg': '#fef9c3', '--status-a-text': '#111827',
+        '--status-b-bg': '#dcfce7', '--status-b-text': '#111827',
+        '--section-hdr-bg': '#f9fafb', '--focus-ring': 'rgba(31,41,55,0.12)',
       },
-      // Theme Đen — giao diện tối
-      // Ramp: header #1e293b → group #162032 → section #0f172a → card #1e293b → page #0f172a
+      // Theme Đen — header tối, nội dung dark
+      // P18: header #1e293b | text sáng | border xám tối
       dark: {
         '--bg': '#0f172a', '--bg-card': '#1e293b',
         '--text': '#f1f5f9', '--text-secondary': '#94a3b8', '--border': '#334155',
         '--primary': '#94a3b8', '--primary-dark': '#64748b', '--primary-light': '#334155',
         '--header-bg': '#1e293b',
         '--group-hdr-bg': '#162032',
-        '--status-a-bg': '#334155', '--status-a-text': '#e2e8f0',
-        '--status-b-bg': '#374151', '--status-b-text': '#d1d5db',
+        '--status-a-bg': '#422006', '--status-a-text': '#fef9c3',
+        '--status-b-bg': '#14532d', '--status-b-text': '#dcfce7',
         '--section-hdr-bg': '#0f172a', '--focus-ring': 'rgba(148,163,184,0.20)',
       },
-      // Theme Cam — gam màu cam ấm
-      // Ramp: header #ea580c → group #fff3e0 → section #fff7ed → card #fffbf7 → page #fff7ed
+      // Theme Cam — header cam, card nền trắng, border cam
+      // P18: header #ea580c | card #ffffff | border #fdba74 | text đen
       orange: {
-        '--bg': '#fff7ed', '--bg-card': '#fffbf7',
-        '--text': '#1c1917', '--text-secondary': '#78716c', '--border': '#fdba74',
-        '--primary': '#ea580c', '--primary-dark': '#c2410c', '--primary-light': '#ffedd5',
+        '--bg': '#fff7ed', '--bg-card': '#ffffff',
+        '--text': '#111827', '--text-secondary': '#4b5563', '--border': '#fdba74',
+        '--primary': '#ea580c', '--primary-dark': '#c2410c', '--primary-light': '#fff7ed',
         '--header-bg': '#ea580c',
         '--group-hdr-bg': '#fff3e0',
-        '--status-a-bg': '#ffedd5', '--status-a-text': '#c2410c',
-        '--status-b-bg': '#fef3c7', '--status-b-text': '#92400e',
+        '--status-a-bg': '#fef9c3', '--status-a-text': '#111827',
+        '--status-b-bg': '#dcfce7', '--status-b-text': '#111827',
         '--section-hdr-bg': '#fff7ed', '--focus-ring': 'rgba(234,88,12,0.12)',
       },
-      // Theme Xanh lá — gam màu xanh lá cây
-      // Ramp: header #16a34a → group #ecfdf5 → section #f0fdf4 → card #f7fef9 → page #f0fdf4
+      // Theme Xanh lá — header xanh lá, card nền trắng, border xanh lá
+      // P18: header #16a34a | card #ffffff | border #86efac | text đen
       green: {
-        '--bg': '#f0fdf4', '--bg-card': '#f7fef9',
-        '--text': '#14532d', '--text-secondary': '#4d7c5f', '--border': '#86efac',
-        '--primary': '#16a34a', '--primary-dark': '#15803d', '--primary-light': '#dcfce7',
+        '--bg': '#f0fdf4', '--bg-card': '#ffffff',
+        '--text': '#111827', '--text-secondary': '#4b5563', '--border': '#86efac',
+        '--primary': '#16a34a', '--primary-dark': '#15803d', '--primary-light': '#f0fdf4',
         '--header-bg': '#16a34a',
         '--group-hdr-bg': '#ecfdf5',
-        '--status-a-bg': '#dcfce7', '--status-a-text': '#15803d',
-        '--status-b-bg': '#bbf7d0', '--status-b-text': '#14532d',
+        '--status-a-bg': '#fef9c3', '--status-a-text': '#111827',
+        '--status-b-bg': '#dcfce7', '--status-b-text': '#111827',
         '--section-hdr-bg': '#f0fdf4', '--focus-ring': 'rgba(22,163,74,0.12)',
       },
     };
@@ -2687,10 +2687,11 @@
        Layout: ảnh trên, thông tin ảnh đó bên dưới.
        Container rộng 600px — đủ rõ, không quá nặng.
     ─────────────────────────────────────────────────────────────────────── */
-    function buildSingleImageHTML(project, img, stt) {
+    function buildSingleImageHTML(project, img, stt, themeHex) {
+      themeHex = themeHex || '#1f2937';
       const isP  = img.status === 'production';
-      const sBg  = isP ? '#d1fae5' : '#dbeafe';
-      const sClr = isP ? '#065f46' : '#1d4ed8';
+      const sBg  = isP ? '#dcfce7' : '#fef9c3';
+      const sClr = isP ? '#166534' : '#92400e';
       const sLbl = isP ? 'Sản xuất' : 'Khảo sát';
 
       /* Vị trí */
@@ -2725,7 +2726,7 @@
       function row(label, value) {
         return (
           '<tr>' +
-          '<td style="padding:4px 0;color:#6b7280;white-space:nowrap;width:110px;vertical-align:top;font-size:13px;font-weight:500">' + escapeHtml(label) + '</td>' +
+          '<td style="padding:4px 0;color:#374151;white-space:nowrap;width:110px;vertical-align:top;font-size:13px;font-weight:600">' + escapeHtml(label) + '</td>' +
           '<td style="padding:4px 0 4px 8px;font-size:13px;word-break:break-word">' + escapeHtml(value) + '</td>' +
           '</tr>'
         );
@@ -2774,7 +2775,8 @@
        Tạo HTML string cho báo cáo. opts = { singlePage: bool }
        Mỗi card ảnh có data-card-idx để tính vị trí khi chia trang PDF.
     ─────────────────────────────────────────────────────────────────────── */
-    function buildReportHTML(project, images, opts, sttList) {
+    function buildReportHTML(project, images, opts, sttList, themeHex) {
+      themeHex = themeHex || '#1f2937';
       const today     = new Date().toLocaleDateString('vi-VN');
       const total     = images.length;
       const prodCount = images.filter(i => i.status === 'production').length;
@@ -2792,7 +2794,7 @@
         ...(project.generalNote ? [['Ghi chú', '<em>' + escapeHtml(project.generalNote) + '</em>']] : []),
       ].map(([l, v]) =>
         '<tr>' +
-        '<td style="padding:3px 0;color:#6b7280;white-space:nowrap;width:110px;vertical-align:top;font-size:12px">' + l + '</td>' +
+        '<td style="padding:3px 0;color:#374151;white-space:nowrap;width:110px;vertical-align:top;font-size:12px;font-weight:600">' + l + '</td>' +
         '<td style="padding:3px 0 3px 8px;font-size:12px">' + v + '</td>' +
         '</tr>'
       ).join('');
@@ -2800,9 +2802,9 @@
       /* Thống kê gọn — 3 ô compact */
       const statsHTML =
         '<div style="display:flex;gap:6px;margin-bottom:12px">' +
-          '<div style="flex:1;padding:5px 6px;background:#eff6ff;border-radius:5px;text-align:center;border:1px solid #bfdbfe">' +
-            '<div style="font-size:14px;font-weight:700;color:#1d4ed8;line-height:1.2">' + total + '</div>' +
-            '<div style="font-size:10px;color:#3b82f6;margin-top:1px">Tổng ảnh</div>' +
+          '<div style="flex:1;padding:5px 6px;background:#f9fafb;border-radius:5px;text-align:center;border:1px solid ' + themeHex + '">' +
+            '<div style="font-size:14px;font-weight:700;color:' + themeHex + ';line-height:1.2">' + total + '</div>' +
+            '<div style="font-size:10px;color:#4b5563;margin-top:1px">Tổng ảnh</div>' +
           '</div>' +
           '<div style="flex:1;padding:5px 6px;background:#fef3c7;border-radius:5px;text-align:center;border:1px solid #fcd34d">' +
             '<div style="font-size:14px;font-weight:700;color:#d97706;line-height:1.2">' + survCount + '</div>' +
@@ -2824,8 +2826,8 @@
         : images.map(function(img, idx) {
             const stt  = (sttList && sttList[idx] != null) ? sttList[idx] : idx + 1;
             const isP  = img.status === 'production';
-            const sBg  = isP ? '#d1fae5' : '#dbeafe';
-            const sClr = isP ? '#065f46' : '#1d4ed8';
+            const sBg  = isP ? '#dcfce7' : '#fef9c3';
+            const sClr = isP ? '#166534' : '#92400e';
             const sLbl = isP ? 'Sản xuất' : 'Khảo sát';
             const tags = Array.isArray(img.tags) && img.tags.length > 0
               ? escapeHtml(img.tags.join(', ')) : '—';
@@ -2838,7 +2840,7 @@
               ['Ghi chú',     escapeHtml(img.notes) || '—'],
             ].map(function(pair) {
               return '<tr>' +
-                '<td style="padding:2px 0;color:#6b7280;white-space:nowrap;width:' + LABEL_W + 'px;vertical-align:top;font-size:11px">' + pair[0] + '</td>' +
+                '<td style="padding:2px 0;color:#374151;white-space:nowrap;width:' + LABEL_W + 'px;vertical-align:top;font-size:11px;font-weight:600">' + pair[0] + '</td>' +
                 '<td style="padding:2px 0 2px 6px;font-size:11px;word-break:break-word">' + pair[1] + '</td>' +
                 '</tr>';
             }).join('');
@@ -2862,8 +2864,8 @@
 
       return (
         '<div style="width:740px;padding:20px;font-family:Arial,sans-serif;background:#fff;box-sizing:border-box">' +
-        '<div style="text-align:center;margin-bottom:14px;padding-bottom:10px;border-bottom:2px solid #1a56db">' +
-          '<div style="font-size:15px;font-weight:700;color:#1a56db;letter-spacing:.4px">BÁO CÁO KHẢO SÁT CÔNG TRÌNH</div>' +
+        '<div style="text-align:center;margin-bottom:14px;padding-bottom:10px;border-bottom:2px solid ' + themeHex + '">' +
+          '<div style="font-size:15px;font-weight:700;color:' + themeHex + ';letter-spacing:.4px">BÁO CÁO KHẢO SÁT CÔNG TRÌNH</div>' +
           '<div style="font-size:11px;color:#6b7280;margin-top:3px">Ngày xuất: ' + today + '</div>' +
         '</div>' +
         '<div style="margin-bottom:12px;padding:10px;background:#f9fafb;border-radius:6px;border:1px solid #e5e7eb">' +
@@ -4769,7 +4771,8 @@
               /* Render ảnh đơn lẻ */
               const singleDiv = document.createElement('div');
               singleDiv.style.cssText = 'position:fixed;left:-9999px;top:0;background:#fff;padding:0;margin:0;z-index:-1;';
-              singleDiv.innerHTML = buildSingleImageHTML(project, img, stt);
+              const themeHex = document.documentElement.style.getPropertyValue('--header-bg').trim() || '#1f2937';
+              singleDiv.innerHTML = buildSingleImageHTML(project, img, stt, themeHex);
               document.body.appendChild(singleDiv);
 
               const imgEl = singleDiv.querySelector('img');
@@ -4808,7 +4811,8 @@
           /* ── Tạo container ẩn ── */
           const container = document.createElement('div');
           container.style.cssText = 'position:fixed;left:-9999px;top:0;width:740px;background:#fff;padding:0;margin:0;z-index:-1;';
-          container.innerHTML = buildReportHTML(project, activeImages, { singlePage: layout === 'single' }, sttList);
+          const themeHex = document.documentElement.style.getPropertyValue('--header-bg').trim() || '#1f2937';
+          container.innerHTML = buildReportHTML(project, activeImages, { singlePage: layout === 'single' }, sttList, themeHex);
           document.body.appendChild(container);
 
           /* Chờ ảnh load */
