@@ -2933,6 +2933,112 @@
         : (img.position || 'Chưa có vị trí');
       return `${stt} - ${sanitizeFileName(pos)}.png`;
     }
+    /* P24: renderImageCardCanvas — Canvas API thay html2canvas cho ZIP export
+       Nhanh hơn 10-20× trên mobile vì không cần DOM render/layout */
+    function renderImageCardCanvas(project, img, stt) {
+      return new Promise(function(resolve, reject) {
+        var W = 600, PAD = 16;
+        var isP   = img.status === 'production';
+        var sLbl  = isP ? 'San xuat' : 'Khao sat';
+        var pos   = (Array.isArray(img.positions)&&img.positions.length)?img.positions.join(' - '):(img.position||'Chua co');
+        var curtain=(Array.isArray(img.curtainTypes)&&img.curtainTypes.length)?img.curtainTypes.join(' | '):(img.curtainType||'Chua co');
+        var spec  = (Array.isArray(img.productSpecs)&&img.productSpecs.length)?img.productSpecs.join(' | '):(img.productSpec||'Chua co');
+        var size  = (img.width&&img.height)?(img.width+' x '+img.height+' '+(img.unit||'mm')):'Chua co';
+        var tags  = (Array.isArray(img.tags)&&img.tags.length)?img.tags.join(' | '):'Khong co';
+        var note  = img.notes||'Khong co';
+        var rows  = [['Tinh trang',sLbl],['Vi tri',pos],['Loai rem',curtain],
+                     ['Quy cach SP',spec],['Kich thuoc',size],['Luu y',tags],['Ghi chu',note]];
+
+        function wrapText(ctx, text, maxW, font) {
+          ctx.font = font||'13px Arial';
+          var str = String(text||'');
+          if (ctx.measureText(str).width <= maxW) return [str];
+          var lines=[], cur='';
+          for (var i=0;i<str.length;i++) {
+            var t=cur+str[i];
+            if (ctx.measureText(t).width>maxW && cur) { lines.push(cur); cur=str[i]; }
+            else { cur=t; }
+          }
+          if (cur) lines.push(cur);
+          return lines;
+        }
+
+        var domImg = new Image();
+        domImg.onload = function() {
+          try {
+            var maxIW=W-PAD*2, maxIH=220;
+            var ratio=Math.min(1,maxIW/domImg.naturalWidth,maxIH/domImg.naturalHeight);
+            var iW=Math.round(domImg.naturalWidth*ratio), iH=Math.round(domImg.naturalHeight*ratio);
+
+            /* pre-calc row heights */
+            var tmpC=document.createElement('canvas'); tmpC.width=1; tmpC.height=1;
+            var tmpX=tmpC.getContext('2d');
+            var labelW=110, valW=W-PAD*2-labelW-20, rowLineH=18, rowPadV=6;
+            var rowHeights=rows.map(function(r){
+              var ls=wrapText(tmpX,r[1],valW,'700 13px Arial');
+              return ls.length*rowLineH+rowPadV*2;
+            });
+            var tableH=rowHeights.reduce(function(a,b){return a+b;},0)+PAD*2;
+            tmpC.width=1; tmpC.height=1;
+
+            var topH=PAD+14+6+28+10;
+            var H=topH+iH+12+tableH+PAD;
+            var canvas=document.createElement('canvas'); canvas.width=W; canvas.height=H;
+            var ctx=canvas.getContext('2d');
+
+            ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+
+            /* mini header */
+            var y=PAD;
+            ctx.font='11px Arial'; ctx.fillStyle='#9ca3af'; ctx.textAlign='right';
+            var pm=(project.projectName||'')+(project.customerName?' - '+project.customerName:'');
+            ctx.fillText(pm,W-PAD,y+11); y+=14+6;
+
+            /* Anh # + badge */
+            ctx.textAlign='left'; ctx.font='bold 15px Arial'; ctx.fillStyle='#111827';
+            ctx.fillText('Anh #'+stt,PAD,y+16);
+            var bx=PAD+ctx.measureText('Anh #'+stt).width+10, by=y+2;
+            var bBg=isP?'#dcfce7':'#fef9c3', bClr=isP?'#166534':'#92400e';
+            ctx.font='bold 11px Arial'; var bTW=ctx.measureText(sLbl).width+18;
+            ctx.fillStyle=bBg;
+            ctx.beginPath(); ctx.roundRect(bx,by,bTW,20,8); ctx.fill();
+            ctx.fillStyle=bClr; ctx.fillText(sLbl,bx+9,by+14);
+            y+=28+10;
+
+            /* image */
+            var ix=PAD+Math.round((maxIW-iW)/2);
+            ctx.drawImage(domImg,ix,y,iW,iH); y+=iH+12;
+
+            /* table border */
+            ctx.strokeStyle='#e5e7eb'; ctx.lineWidth=1;
+            ctx.strokeRect(PAD,y,W-PAD*2,tableH);
+
+            /* rows */
+            var ty=y+PAD;
+            rows.forEach(function(r,ri){
+              var rh=rowHeights[ri];
+              ctx.font='bold 13px Arial'; ctx.fillStyle='#374151'; ctx.textAlign='left';
+              ctx.fillText(r[0],PAD+10,ty+rowPadV+rowLineH-3);
+              ctx.font='bold 13px Arial'; ctx.fillStyle='#111827';
+              var ls=wrapText(ctx,r[1],valW,'700 13px Arial');
+              ls.forEach(function(ln,li){ ctx.fillText(ln,PAD+10+labelW,ty+rowPadV+(li+1)*rowLineH-3); });
+              if (ri<rows.length-1){
+                ctx.strokeStyle='#f3f4f6'; ctx.lineWidth=0.5;
+                ctx.beginPath(); ctx.moveTo(PAD+1,ty+rh); ctx.lineTo(W-PAD-1,ty+rh); ctx.stroke();
+              }
+              ty+=rh;
+            });
+
+            var b64=canvas.toDataURL('image/jpeg',0.78).split(',')[1];
+            canvas.width=1; canvas.height=1;
+            resolve(b64);
+          } catch(e){ reject(e); }
+        };
+        domImg.onerror=function(){ reject(new Error('Cannot load image')); };
+        domImg.src=img.imagePreviewUrl||'';
+      });
+    }
+
     /* ─── buildSingleImageHTML ──────────────────────────────────────────────
        Tạo HTML cho 1 ảnh khảo sát riêng lẻ (dùng khi Xuất từng ảnh).
        Layout: ảnh trên, thông tin ảnh đó bên dưới.
@@ -3009,7 +3115,7 @@
         '</div>' +
         /* Ảnh gốc */
         '<img src="' + (img.imagePreviewUrl || '') + '" ' +
-          'style="width:100%;max-height:340px;object-fit:contain;border-radius:6px;background:#f3f4f6;display:block;margin-bottom:12px" />' +
+          'style="width:100%;max-height:220px;object-fit:contain;border-radius:6px;background:#f3f4f6;display:block;margin-bottom:12px" />' +
         /* Bảng thông tin */
         '<div style="border:1px solid #e5e7eb;border-radius:6px;padding:10px 12px">' +
           '<table style="width:100%;border-collapse:collapse;table-layout:fixed">' +
@@ -5156,45 +5262,24 @@
               const { img, stt } = exportItems[i];
               if (!img.imagePreviewUrl) continue;
 
-              /* Cập nhật tiến độ */
               setExporting('Đang xuất ảnh ' + (i + 1) + '/' + total + '...');
 
-              /* Render ảnh đơn lẻ */
-              const singleDiv = document.createElement('div');
-              singleDiv.style.cssText = 'position:fixed;left:-9999px;top:0;background:#fff;padding:0;margin:0;z-index:-1;';
-              const themeHex = document.documentElement.style.getPropertyValue('--header-bg').trim() || '#1f2937';
-              singleDiv.innerHTML = buildSingleImageHTML(project, img, stt, themeHex);
-              document.body.appendChild(singleDiv);
-
-              const imgEl = singleDiv.querySelector('img');
-              if (imgEl && !imgEl.complete) {
-                await new Promise(resolve => { imgEl.onload = resolve; imgEl.onerror = resolve; });
-              }
-
-              /* Nhường luồng UI trước mỗi ảnh — đặc biệt quan trọng trên mobile */
-              await new Promise(r => setTimeout(r, 150));
-
+              /* P24: Canvas API trực tiếp — không dùng html2canvas */
               try {
-                const canvas = await html2canvas(singleDiv, {
-                  scale: 1, useCORS: true, allowTaint: true,
-                  backgroundColor: '#ffffff', imageTimeout: 10000,
-                });
-                if (document.body.contains(singleDiv)) document.body.removeChild(singleDiv);
-
-                /* Dùng JPEG thay PNG — nhanh hơn đáng kể trên mobile */
-                const b64 = canvas.toDataURL('image/jpeg', 0.88).split(',')[1];
+                await new Promise(r => setTimeout(r, 30));
+                const b64 = await renderImageCardCanvas(project, img, stt);
                 folder.file(buildImageFileName(stt, img).replace('.png', '.jpg'), b64, { base64: true });
               } catch (imgErr) {
-                if (document.body.contains(singleDiv)) document.body.removeChild(singleDiv);
-                storageLog('ERROR', 'chi-tiet', 'runExport/individual-zip',
+                storageLog('ERROR', 'chi-tiet', 'runExport/canvas',
                   'Loi render anh stt=' + stt, formatError(imgErr));
               }
             }
 
             /* Tạo ZIP và hiển thị ShareModal */
             setExporting('Đang nén file ZIP...');
+            /* level:1 = fastest (Huffman only) — đủ nhanh trên mobile */
             const zipBlob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE',
-              compressionOptions: { level: 5 } });
+              compressionOptions: { level: 1 } });
             setExportResult({ blob: zipBlob, filename: zipName, mimeType: 'application/zip' });
             setShowShareModal(true);
             return;
@@ -5226,7 +5311,7 @@
           });
 
           /* Chụp toàn bộ — scale thấp hơn trên mobile để không bị treo */
-          const SCALE = window.innerWidth < 768 ? 1.5 : 2;
+          const SCALE = window.innerWidth < 768 ? 1.0 : 2;
           const canvas = await html2canvas(container, {
             scale: SCALE, useCORS: true, allowTaint: true, backgroundColor: '#ffffff'
           });
