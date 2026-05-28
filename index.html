@@ -5962,8 +5962,16 @@
       // Mặc định: màn hình danh sách công trình
       return (
         <ProjectList
-          // ── Mount ─────────────────────────────────────────────────
-const rootEl = document.getElementById("root");
+          onCreateNew={() => goTo('create')}
+          onSelectProject={projId => goTo('detail', projId)}
+          onOpenTagManager={() => goTo('tag-manager')}
+          onOpenSettings={() => goTo('settings')}
+        />
+      );
+    }
+
+    // ── Mount ─────────────────────────────────────────────────
+    const rootEl = document.getElementById("root");
     ReactDOM.createRoot(rootEl).render(<App />);
   </script>
 </body>
