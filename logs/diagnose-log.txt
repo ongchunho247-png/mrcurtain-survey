@@ -1050,3 +1050,12 @@ Hash    : 425203d fix: chuan hoa theme header border text p18
 Remote  : https://github.com/ongchunho247-png/mrcurtain-survey.git
 Netlify : tu deploy tu branch main (~30 giay)
 ────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────
+[09:43:51 28/5/2026] DEPLOY THANH CONG
+Commit  : feat: P19 - chip/btn transparent+border+black, export PDF white theme hardcode
+Branch  : main
+Hash    : 4b8e937 feat: P19 - chip/btn transparent+border+black, export PDF white theme hardcode
+Remote  : https://github.com/ongchunho247-png/mrcurtain-survey.git
+Netlify : tu deploy tu branch main (~30 giay)
+────────────────────────────────────────────────────────────
