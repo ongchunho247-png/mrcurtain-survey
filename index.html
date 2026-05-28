@@ -1,6 +1,6 @@
 <!DOCTYPE html>
-<!-- MrCurtain Survey | Prompt 14.6 | build: 2026-05-27 -->
-<!-- APP_PROMPT_VERSION = "P18" —— chỉ sửa tại đây khi lên version mới -->
+<!-- MrCurtain Survey | Prompt 19 | build: 2026-05-28 -->
+<!-- APP_PROMPT_VERSION = "P19" —— chỉ sửa tại đây khi lên version mới -->
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
@@ -162,10 +162,10 @@
     .btn-primary:hover { background: var(--primary-dark); }
     .btn-primary:disabled { background: #9ca3af; cursor: not-allowed; transform: none; }
     .btn-secondary {
-      background: var(--bg); color: var(--text);
+      background: var(--bg-card); color: var(--text);
       border: 1.5px solid var(--border);
     }
-    .btn-secondary:hover { background: var(--border); }
+    .btn-secondary:hover { background: var(--bg); }
     .btn-danger { background: #fef2f2; color: var(--danger); border: 1.5px solid #fecaca; }
     .btn-full { width: 100%; }
 
@@ -868,21 +868,21 @@
     .chip {
       display: inline-flex; align-items: center; padding: 7px 13px;
       border-radius: 20px; font-size: 13px; font-weight: 500;
-      border: 1.5px solid var(--border); background: white;
-      color: var(--text-secondary); cursor: pointer;
+      border: 1.5px solid var(--border); background: transparent;
+      color: var(--text); cursor: pointer;
       transition: all 0.12s ease; -webkit-tap-highlight-color: transparent;
       user-select: none; white-space: nowrap;
     }
     .chip:active { transform: scale(0.95); }
-    /* Single-select active */
+    /* Single-select active — đen đậm, border primary, không tô nền */
     .chip.chip-active {
-      background: var(--primary); color: white;
-      border-color: var(--primary); font-weight: 600;
+      background: transparent; color: #111827;
+      border-color: var(--primary); font-weight: 700;
     }
-    /* Multi-select active */
+    /* Multi-select active — đen đậm, border primary, không tô nền */
     .chip.chip-multi-active {
-      background: #fef3c7; color: #92400e;
-      border-color: #fde68a; font-weight: 600;
+      background: transparent; color: #111827;
+      border-color: var(--primary); font-weight: 700;
     }
     /* Badge số thứ tự trong chip ordered multi-select (Prompt 9.6) */
     .chip-order-badge {
@@ -1496,7 +1496,7 @@
     // =============================================
     // STORAGE UTILS
     // =============================================
-    const APP_PROMPT_VERSION = 'P18'; // Cập nhật khi lên version mới
+    const APP_PROMPT_VERSION = 'P19'; // Cập nhật khi lên version mới
     const STORAGE_KEY = 'mrcurtain_survey_projects';
     const STORAGE_KEY_LEGACY = 'mrcurtain_projects'; // key cũ từ Prompt 2
     // Khai báo sớm để runDataMigration() dùng được (Prompt 14.2)
@@ -2688,7 +2688,7 @@
        Container rộng 600px — đủ rõ, không quá nặng.
     ─────────────────────────────────────────────────────────────────────── */
     function buildSingleImageHTML(project, img, stt, themeHex) {
-      themeHex = themeHex || '#1f2937';
+      themeHex = '#1f2937'; /* P19: ảnh xuất luôn dùng theme trắng */
       const isP  = img.status === 'production';
       const sBg  = isP ? '#dcfce7' : '#fef9c3';
       const sClr = isP ? '#166534' : '#92400e';
@@ -2776,7 +2776,7 @@
        Mỗi card ảnh có data-card-idx để tính vị trí khi chia trang PDF.
     ─────────────────────────────────────────────────────────────────────── */
     function buildReportHTML(project, images, opts, sttList, themeHex) {
-      themeHex = themeHex || '#1f2937';
+      themeHex = '#1f2937'; /* P19: PDF luôn dùng theme trắng — bỏ dynamic */
       const today     = new Date().toLocaleDateString('vi-VN');
       const total     = images.length;
       const prodCount = images.filter(i => i.status === 'production').length;
@@ -2799,20 +2799,20 @@
         '</tr>'
       ).join('');
 
-      /* Thống kê gọn — 3 ô compact */
+      /* Thống kê gọn — 3 ô compact (P19: nền trắng, border xám, text đen) */
       const statsHTML =
         '<div style="display:flex;gap:6px;margin-bottom:12px">' +
-          '<div style="flex:1;padding:5px 6px;background:#f9fafb;border-radius:5px;text-align:center;border:1px solid ' + themeHex + '">' +
-            '<div style="font-size:14px;font-weight:700;color:' + themeHex + ';line-height:1.2">' + total + '</div>' +
+          '<div style="flex:1;padding:5px 6px;background:#ffffff;border-radius:5px;text-align:center;border:1px solid #e5e7eb">' +
+            '<div style="font-size:14px;font-weight:700;color:#111827;line-height:1.2">' + total + '</div>' +
             '<div style="font-size:10px;color:#4b5563;margin-top:1px">Tổng ảnh</div>' +
           '</div>' +
-          '<div style="flex:1;padding:5px 6px;background:#fef3c7;border-radius:5px;text-align:center;border:1px solid #fcd34d">' +
-            '<div style="font-size:14px;font-weight:700;color:#d97706;line-height:1.2">' + survCount + '</div>' +
-            '<div style="font-size:10px;color:#92400e;margin-top:1px">Khảo sát</div>' +
+          '<div style="flex:1;padding:5px 6px;background:#ffffff;border-radius:5px;text-align:center;border:1px solid #e5e7eb">' +
+            '<div style="font-size:14px;font-weight:700;color:#111827;line-height:1.2">' + survCount + '</div>' +
+            '<div style="font-size:10px;color:#4b5563;margin-top:1px">Khảo sát</div>' +
           '</div>' +
-          '<div style="flex:1;padding:5px 6px;background:#d1fae5;border-radius:5px;text-align:center;border:1px solid #6ee7b7">' +
-            '<div style="font-size:14px;font-weight:700;color:#065f46;line-height:1.2">' + prodCount + '</div>' +
-            '<div style="font-size:10px;color:#065f46;margin-top:1px">Sản xuất</div>' +
+          '<div style="flex:1;padding:5px 6px;background:#ffffff;border-radius:5px;text-align:center;border:1px solid #e5e7eb">' +
+            '<div style="font-size:14px;font-weight:700;color:#111827;line-height:1.2">' + prodCount + '</div>' +
+            '<div style="font-size:10px;color:#4b5563;margin-top:1px">Sản xuất</div>' +
           '</div>' +
         '</div>';
 
@@ -5815,7 +5815,7 @@
       );
     }
 
-    // ── Mount ──────────────────────────────────────────────────
+    // ── Mount ─────────────────────────────────────────────────
     const rootEl = document.getElementById('root');
     ReactDOM.createRoot(rootEl).render(<App />);
   </script>
