@@ -1110,3 +1110,21 @@ are terminated then try again. If it still fails, a git process
 may have crashed in this repository earlier:
 remove the file manually to continue.
 ============================================================
+
+────────────────────────────────────────────────────────────
+[13:46:06 28/5/2026] DEPLOY THANH CONG
+Commit  : P23: Migrate localStorage → IndexedDB (~500MB-2GB capacity)
+
+- Add IDB wrapper: _getDB, _idbSet, _idbDelete, _idbGetAll
+- Add cache layer: _cache, _lsGet, _lsSet, _lsRemove, _lsKeys
+- Add initStorage(): loads IDB → cache on startup; migrates localStorage on first run
+- Replace 23×getItem, 15×setItem, 2×removeItem with cache shim
+- Fix backupBeforeMigration loop → _lsKeys()
+- Move migrateFromLegacyKey + runDataMigration into initStorage()
+- App: storageReady state + loading spinner while IDB initializes
+- Fallback to localStorage shim if IDB unavailable (private browsing)
+Branch  : main
+Hash    : 0af8f58 P23: Migrate localStorage → IndexedDB (~500MB-2GB capacity)
+Remote  : https://github.com/ongchunho247-png/mrcurtain-survey.git
+Netlify : tu deploy tu branch main (~30 giay)
+────────────────────────────────────────────────────────────
