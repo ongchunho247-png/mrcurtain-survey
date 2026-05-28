@@ -3276,10 +3276,13 @@
       const subText  = progress.totalActiveImages > 0
         ? `${progress.totalActiveImages} ảnh`
         : (isReady ? 'Sẵn sàng SX' : 'Khảo sát');
-      const lpTimer = React.useRef(null);
+      const lpTimer  = React.useRef(null);
+      const lpFired  = React.useRef(false);   // true khi long-press đã kích hoạt
 
-      function startLP(e) {
+      function startLP() {
+        lpFired.current = false;
         lpTimer.current = setTimeout(function() {
+          lpFired.current = true;
           lpTimer.current = null;
           onLongPress && onLongPress(project.projectId);
         }, 500);
@@ -3288,7 +3291,9 @@
         if (lpTimer.current) { clearTimeout(lpTimer.current); lpTimer.current = null; }
       }
       function handleClick() {
-        if (lpTimer.current) { cancelLP(); onToggle(); } // normal tap — long-press not fired yet
+        // onClick luôn chạy sau touchend — chỉ bỏ qua nếu long-press đã kích hoạt
+        if (!lpFired.current) onToggle();
+        lpFired.current = false;
       }
 
       return (

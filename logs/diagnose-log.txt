@@ -1172,3 +1172,19 @@ Hash    : 472bab7 P23b: Fix initStorage — async/await → Promise chain
 Remote  : https://github.com/ongchunho247-png/mrcurtain-survey.git
 Netlify : tu deploy tu branch main (~30 giay)
 ────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────
+[22:01:42 28/5/2026] DEPLOY THANH CONG
+Commit  : P24: Xóa công trình (long-press) + Thùng rác
+
+- Long-press 500ms trên card → context menu bottom-sheet
+- Xóa mềm: softDeleteProject (isDeleted: true)
+- Màn hình Thùng rác: xem, khôi phục, xóa vĩnh viễn
+- Nút 🗑️ trong action bar + badge đếm số công trình đã xóa
+- getProjects() lọc isDeleted !== true
+- CSS: ctx-sheet, trash-item, trash-btn-restore/delete
+Branch  : main
+Hash    : bef900f P24: Xóa công trình (long-press) + Thùng rác
+Remote  : https://github.com/ongchunho247-png/mrcurtain-survey.git
+Netlify : tu deploy tu branch main (~30 giay)
+────────────────────────────────────────────────────────────
