@@ -1080,3 +1080,12 @@ are terminated then try again. If it still fails, a git process
 may have crashed in this repository earlier:
 remove the file manually to continue.
 ============================================================
+
+────────────────────────────────────────────────────────────
+[11:53:06 28/5/2026] DEPLOY THANH CONG
+Commit  : feat: P21 - Arial font, text tiers 20/16/13px, chips luu-y no checkmark, report labels bold/values normal
+Branch  : main
+Hash    : bacfd48 feat: P21 - Arial font, text tiers 20/16/13px, chips luu-y no checkmark, report labels bold/values normal
+Remote  : https://github.com/ongchunho247-png/mrcurtain-survey.git
+Netlify : tu deploy tu branch main (~30 giay)
+────────────────────────────────────────────────────────────

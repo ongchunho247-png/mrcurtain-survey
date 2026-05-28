@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- MrCurtain Survey | Prompt 20 | build: 2026-05-28 -->
-<!-- APP_PROMPT_VERSION = "P21" —— chỉ sửa tại đây khi lên version mới -->
+<!-- APP_PROMPT_VERSION = "P22" —— chỉ sửa tại đây khi lên version mới -->
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
@@ -1497,7 +1497,7 @@
     // =============================================
     // STORAGE UTILS
     // =============================================
-    const APP_PROMPT_VERSION = 'P21'; // Cập nhật khi lên version mới
+    const APP_PROMPT_VERSION = 'P22'; // Cập nhật khi lên version mới
     const STORAGE_KEY = 'mrcurtain_survey_projects';
     const STORAGE_KEY_LEGACY = 'mrcurtain_projects'; // key cũ từ Prompt 2
     // Khai báo sớm để runDataMigration() dùng được (Prompt 14.2)
@@ -3638,22 +3638,27 @@
               </div>
             </div>
 
-            {/* ── Lưu ý (multi-select không có thứ tự) ── */}
+            {/* ── Lưu ý (ordered multi-select) ── */}
             {HASHTAG_GROUPS.filter(g => g.multi).map(group => (
               <div key={group.id} className="idf-section">
-                <div className="idf-section-title">⚠️ {group.label} <span className="idf-hint">Chọn nhiều</span></div>
+                <div className="idf-section-title">⚠️ {group.label} <span className="idf-hint">Chọn nhiều, theo thứ tự</span></div>
                 <div className="chip-group">
                   <div className="chips-wrap">
-                    {getTagsByGroup(group.id).map(tag => (
-                      <button
-                        key={tag.tagId}
-                        type="button"
-                        className={`chip${form.tags.includes(tag.tagName) ? ' chip-multi-active' : ''}`}
-                        onClick={() => handleMultiChip(tag.tagName)}
-                      >
-                        {tag.tagName}
-                      </button>
-                    ))}
+                    {getTagsByGroup(group.id).map(tag => {
+                      const idx = form.tags.indexOf(tag.tagName);
+                      const selected = idx !== -1;
+                      return (
+                        <button
+                          key={tag.tagId}
+                          type="button"
+                          className={`chip${selected ? ' chip-multi-active' : ''}`}
+                          onClick={() => handleOrderedMultiChip('tags', tag.tagName)}
+                        >
+                          {selected && <span className="chip-order-badge">{idx + 1}</span>}
+                          {tag.tagName}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -4780,23 +4785,24 @@
                 await new Promise(resolve => { imgEl.onload = resolve; imgEl.onerror = resolve; });
               }
 
+              /* Nhường luồng UI trước mỗi ảnh — đặc biệt quan trọng trên mobile */
+              await new Promise(r => setTimeout(r, 150));
+
               try {
                 const canvas = await html2canvas(singleDiv, {
                   scale: 1, useCORS: true, allowTaint: true,
-                  backgroundColor: '#ffffff', imageTimeout: 8000,
+                  backgroundColor: '#ffffff', imageTimeout: 10000,
                 });
                 if (document.body.contains(singleDiv)) document.body.removeChild(singleDiv);
 
-                /* Đưa PNG vào folder trong ZIP (base64) */
-                const b64 = canvas.toDataURL('image/png').split(',')[1];
-                folder.file(buildImageFileName(stt, img), b64, { base64: true });
+                /* Dùng JPEG thay PNG — nhanh hơn đáng kể trên mobile */
+                const b64 = canvas.toDataURL('image/jpeg', 0.88).split(',')[1];
+                folder.file(buildImageFileName(stt, img).replace('.png', '.jpg'), b64, { base64: true });
               } catch (imgErr) {
                 if (document.body.contains(singleDiv)) document.body.removeChild(singleDiv);
                 storageLog('ERROR', 'chi-tiet', 'runExport/individual-zip',
                   'Loi render anh stt=' + stt, formatError(imgErr));
               }
-
-              await new Promise(r => setTimeout(r, 20));
             }
 
             /* Tạo ZIP và hiển thị ShareModal */
@@ -4833,8 +4839,8 @@
             return { top, bottom: top + card.offsetHeight };
           });
 
-          /* Chụp toàn bộ */
-          const SCALE = 2;
+          /* Chụp toàn bộ — scale thấp hơn trên mobile để không bị treo */
+          const SCALE = window.innerWidth < 768 ? 1.5 : 2;
           const canvas = await html2canvas(container, {
             scale: SCALE, useCORS: true, allowTaint: true, backgroundColor: '#ffffff'
           });
@@ -5807,15 +5813,7 @@
       // Mặc định: màn hình danh sách công trình
       return (
         <ProjectList
-          onSelectProject={projId => goTo('detail', projId)}
-          onCreateNew={() => goTo('create')}
-          onOpenTagManager={() => goTo('tag-manager')}
-          onOpenSettings={() => goTo('settings')}
-        />
-      );
-    }
-
-    // ── Mount ─────────────────────────────────────────────────
+          // ── Mount ─────────────────────────────────────────────────
 const rootEl = document.getElementById("root");
     ReactDOM.createRoot(rootEl).render(<App />);
   </script>
