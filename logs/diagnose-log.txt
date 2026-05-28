@@ -1159,3 +1159,16 @@ Hash    : 2680f24 P23b: Fix initStorage — async/await → Promise chain
 Remote  : https://github.com/ongchunho247-png/mrcurtain-survey.git
 Netlify : tu deploy tu branch main (~30 giay)
 ────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────
+[14:27:15 28/5/2026] DEPLOY THANH CONG
+Commit  : P23b: Fix initStorage — async/await → Promise chain
+
+- Convert async function to Promise chain (Babel standalone compatibility)
+- Fix localStorage migration: use localStorage.getItem() directly, not _lsGet()
+- Both issues caused blank page on first load
+Branch  : main
+Hash    : 472bab7 P23b: Fix initStorage — async/await → Promise chain
+Remote  : https://github.com/ongchunho247-png/mrcurtain-survey.git
+Netlify : tu deploy tu branch main (~30 giay)
+────────────────────────────────────────────────────────────

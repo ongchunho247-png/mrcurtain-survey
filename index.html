@@ -559,6 +559,62 @@
     .modal-desc { font-size: 14px; color: var(--text-secondary); text-align: center; margin-bottom: 20px; }
     .modal-btns { display: flex; gap: 10px; }
 
+    /* ===== CONTEXT MENU (long-press) ===== */
+    .ctx-sheet {
+      position: fixed; inset: 0; z-index: 400;
+      display: flex; align-items: flex-end; justify-content: center;
+      background: rgba(0,0,0,0.45);
+    }
+    .ctx-sheet-box {
+      background: var(--bg-card); width: 100%; max-width: 480px;
+      border-radius: 20px 20px 0 0; padding: 8px 16px 32px;
+      box-shadow: 0 -4px 24px rgba(0,0,0,0.18);
+    }
+    .ctx-sheet-handle {
+      width: 40px; height: 4px; background: var(--border);
+      border-radius: 2px; margin: 12px auto 16px;
+    }
+    .ctx-sheet-title {
+      font-size: 13px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .04em; color: var(--text-secondary);
+      padding: 0 4px 10px; border-bottom: 1.5px solid var(--border); margin-bottom: 8px;
+    }
+    .ctx-sheet-btn {
+      display: flex; align-items: center; gap: 12px; width: 100%;
+      padding: 14px 4px; font-size: 16px; font-weight: 500;
+      background: none; border: none; color: var(--text); cursor: pointer;
+      border-bottom: 1px solid var(--border);
+      font-family: Arial, sans-serif;
+    }
+    .ctx-sheet-btn:last-child { border-bottom: none; }
+    .ctx-sheet-btn.danger { color: #dc2626; }
+    .ctx-sheet-icon { font-size: 20px; width: 28px; text-align: center; }
+
+    /* ===== TRASH SCREEN ===== */
+    .trash-item {
+      background: var(--bg-card); border: 1.5px solid var(--border);
+      border-radius: 12px; padding: 14px 16px; margin-bottom: 10px;
+    }
+    .trash-item-name {
+      font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 4px;
+    }
+    .trash-item-date {
+      font-size: 13px; color: var(--text-secondary); margin-bottom: 12px;
+    }
+    .trash-item-actions { display: flex; gap: 8px; }
+    .trash-btn-restore {
+      flex: 1; padding: 9px 0; font-size: 13px; font-weight: 600;
+      border: 1.5px solid var(--primary); color: var(--primary);
+      background: var(--bg-card); border-radius: 8px; cursor: pointer;
+      font-family: Arial, sans-serif;
+    }
+    .trash-btn-delete {
+      flex: 1; padding: 9px 0; font-size: 13px; font-weight: 600;
+      border: 1.5px solid #dc2626; color: #dc2626;
+      background: var(--bg-card); border-radius: 8px; cursor: pointer;
+      font-family: Arial, sans-serif;
+    }
+
     /* ===== SCROLLBAR ===== */
     ::-webkit-scrollbar { width: 4px; }
     ::-webkit-scrollbar-track { background: transparent; }
@@ -1497,7 +1553,7 @@
     // =============================================
     // STORAGE UTILS
     // =============================================
-    const APP_PROMPT_VERSION = 'P23'; // Cập nhật khi lên version mới
+    const APP_PROMPT_VERSION = 'P24'; // Cập nhật khi lên version mới
     const STORAGE_KEY = 'mrcurtain_survey_projects';
     const STORAGE_KEY_LEGACY = 'mrcurtain_projects'; // key cũ từ Prompt 2
     // Khai báo sớm để runDataMigration() dùng được (Prompt 14.2)
@@ -1955,7 +2011,7 @@
             `Kiểu dữ liệu: ${typeof parsed}`);
           return [];
         }
-        return parsed.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        return parsed.filter(p => p.isDeleted !== true).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       } catch (err) {
         storageLog('ERROR', 'danh-sách', 'getProjects()',
           'JSON.parse thất bại — dữ liệu localStorage bị hỏng, trả về []',
@@ -2037,6 +2093,75 @@
 
     // Alias giữ tương thích với code cũ trong form
     const saveProject = addProject;
+
+    /** XÓA MỀM công trình: isDeleted = true */
+    function softDeleteProject(projectId) {
+      try {
+        var projects = getProjects().concat(getDeletedProjects());
+        var idx = projects.findIndex(function(p) { return p.projectId === projectId; });
+        if (idx === -1) return null;
+        projects[idx] = Object.assign({}, projects[idx], { isDeleted: true, deletedAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
+        _lsSet(STORAGE_KEY, JSON.stringify(projects));
+        window.dispatchEvent(new Event('projectsUpdated'));
+        storageLog('INFO', 'danh-sách', 'softDeleteProject()', 'Xóa mềm công trình', 'projectId: ' + projectId);
+        return projects[idx];
+      } catch(err) {
+        storageLog('ERROR', 'danh-sách', 'softDeleteProject()', 'Lỗi xóa mềm', String(err));
+        throw err;
+      }
+    }
+
+    /** KHÔI PHỤC công trình từ thùng rác */
+    function restoreProject(projectId) {
+      try {
+        var raw = _lsGet(STORAGE_KEY);
+        var all = raw ? JSON.parse(raw) : [];
+        var idx = all.findIndex(function(p) { return p.projectId === projectId; });
+        if (idx === -1) return null;
+        all[idx] = Object.assign({}, all[idx], { isDeleted: false, deletedAt: null, updatedAt: new Date().toISOString() });
+        _lsSet(STORAGE_KEY, JSON.stringify(all));
+        window.dispatchEvent(new Event('projectsUpdated'));
+        storageLog('INFO', 'thùng-rác', 'restoreProject()', 'Khôi phục công trình', 'projectId: ' + projectId);
+        return all[idx];
+      } catch(err) {
+        storageLog('ERROR', 'thùng-rác', 'restoreProject()', 'Lỗi khôi phục', String(err));
+        throw err;
+      }
+    }
+
+    /** XÓA VĨNH VIỄN công trình và toàn bộ ảnh của nó */
+    function permanentDeleteProject(projectId) {
+      try {
+        var raw = _lsGet(STORAGE_KEY);
+        var all = raw ? JSON.parse(raw) : [];
+        var filtered = all.filter(function(p) { return p.projectId !== projectId; });
+        _lsSet(STORAGE_KEY, JSON.stringify(filtered));
+        // Xóa luôn tất cả ảnh của project
+        var rawImgs = _lsGet(IMAGES_KEY);
+        if (rawImgs) {
+          var imgs = JSON.parse(rawImgs);
+          _lsSet(IMAGES_KEY, JSON.stringify(imgs.filter(function(img) { return img.projectId !== projectId; })));
+        }
+        window.dispatchEvent(new Event('projectsUpdated'));
+        storageLog('INFO', 'thùng-rác', 'permanentDeleteProject()', 'Xóa vĩnh viễn công trình', 'projectId: ' + projectId);
+      } catch(err) {
+        storageLog('ERROR', 'thùng-rác', 'permanentDeleteProject()', 'Lỗi xóa vĩnh viễn', String(err));
+        throw err;
+      }
+    }
+
+    /** Lấy danh sách công trình đã xóa mềm */
+    function getDeletedProjects() {
+      try {
+        var raw = _lsGet(STORAGE_KEY);
+        if (!raw) return [];
+        var all = JSON.parse(raw);
+        if (!Array.isArray(all)) return [];
+        return all
+          .filter(function(p) { return p.isDeleted === true; })
+          .sort(function(a, b) { return new Date(b.deletedAt || b.updatedAt) - new Date(a.deletedAt || a.updatedAt); });
+      } catch(err) { return []; }
+    }
 
     // =============================================
     // IMAGE STORAGE UTILS  (Prompt 5)
@@ -3145,16 +3270,37 @@
     }
 
     /* --- Card nhỏ trong grid 3 cột (Prompt 10.1) --- */
-    function ProjectGridCard({ project, progress, isExpanded, onToggle }) {
+    function ProjectGridCard({ project, progress, isExpanded, onToggle, onLongPress }) {
       const isReady  = progress.projectGroup === 'readyForProduction';
       const dotCls   = isReady ? 'ready' : 'surveying';
       const subText  = progress.totalActiveImages > 0
         ? `${progress.totalActiveImages} ảnh`
         : (isReady ? 'Sẵn sàng SX' : 'Khảo sát');
+      const lpTimer = React.useRef(null);
+
+      function startLP(e) {
+        lpTimer.current = setTimeout(function() {
+          lpTimer.current = null;
+          onLongPress && onLongPress(project.projectId);
+        }, 500);
+      }
+      function cancelLP() {
+        if (lpTimer.current) { clearTimeout(lpTimer.current); lpTimer.current = null; }
+      }
+      function handleClick() {
+        if (lpTimer.current) { cancelLP(); onToggle(); } // normal tap — long-press not fired yet
+      }
+
       return (
         <div
           className={`proj-grid-card${isExpanded ? ' is-expanded' : ''}`}
-          onClick={onToggle}
+          onTouchStart={startLP}
+          onTouchEnd={cancelLP}
+          onTouchMove={cancelLP}
+          onMouseDown={startLP}
+          onMouseUp={cancelLP}
+          onMouseLeave={cancelLP}
+          onClick={handleClick}
           role="button"
           aria-expanded={isExpanded}
           aria-label={`${isExpanded ? 'Thu gọn' : 'Xem tóm tắt'}: ${project.projectName}`}
@@ -3230,13 +3376,88 @@
       );
     }
 
+    /* --- Trash Screen (P24) --- */
+    function TrashScreen({ onBack }) {
+      const [items, setItems] = useState(function() { return getDeletedProjects(); });
+      const [confirmId, setConfirmId] = useState(null);
+
+      function handleRestore(projectId) {
+        restoreProject(projectId);
+        setItems(getDeletedProjects());
+      }
+      function handlePermanentDelete(projectId) {
+        permanentDeleteProject(projectId);
+        setItems(getDeletedProjects());
+        setConfirmId(null);
+      }
+
+      return (
+        <div className="app-container">
+          <header className="page-header">
+            <button className="btn-back" onClick={onBack}>‹</button>
+            <h1>Thùng rác</h1>
+          </header>
+          <div className="page-content">
+            {items.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-icon">🗑️</div>
+                <div className="empty-title">Thùng rác trống</div>
+                <div className="empty-desc">Chưa có công trình nào bị xóa.</div>
+              </div>
+            ) : (
+              <>
+                <div style={{fontSize:13, color:'var(--text-secondary)', marginBottom:12}}>
+                  {items.length} công trình đã xóa — nhấn Khôi phục để đưa về danh sách.
+                </div>
+                {items.map(p => (
+                  <div key={p.projectId} className="trash-item">
+                    <div className="trash-item-name">{p.projectName || '(Không tên)'}</div>
+                    <div className="trash-item-date">
+                      Xóa lúc: {p.deletedAt ? formatDate(p.deletedAt) : '—'}
+                      {p.customerName ? ' · ' + p.customerName : ''}
+                    </div>
+                    <div className="trash-item-actions">
+                      <button className="trash-btn-restore" onClick={() => handleRestore(p.projectId)}>↩ Khôi phục</button>
+                      <button className="trash-btn-delete" onClick={() => setConfirmId(p.projectId)}>🗑️ Xóa vĩnh viễn</button>
+                    </div>
+                  </div>
+                ))}
+              </>
+            )}
+          </div>
+
+          {/* Confirm xóa vĩnh viễn */}
+          {confirmId && (() => {
+            const p = items.find(x => x.projectId === confirmId);
+            return (
+              <div className="modal-overlay" onClick={() => setConfirmId(null)}>
+                <div className="modal-box" onClick={e => e.stopPropagation()}>
+                  <div className="modal-icon">⚠️</div>
+                  <div className="modal-title">Xóa vĩnh viễn?</div>
+                  <div className="modal-desc">
+                    Công trình <strong>{p ? p.projectName : ''}</strong> và toàn bộ ảnh sẽ bị xóa hoàn toàn, không thể khôi phục.
+                  </div>
+                  <div className="modal-btns">
+                    <button className="btn btn-secondary" style={{flex:1}} onClick={() => setConfirmId(null)}>Hủy</button>
+                    <button className="btn btn-danger" style={{flex:1, background:'#dc2626', color:'#fff', border:'none', borderRadius:10, padding:'12px 0', fontWeight:700, cursor:'pointer', fontFamily:'Arial,sans-serif', fontSize:14}} onClick={() => handlePermanentDelete(confirmId)}>Xóa</button>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+      );
+    }
+
     /* --- Project List Screen  (Prompt 10: 2 nhóm + accordion) --- */
-    function ProjectList({ onCreateNew, onSelectProject, onOpenTagManager, onOpenSettings }) {
+    function ProjectList({ onCreateNew, onSelectProject, onOpenTagManager, onOpenSettings, onOpenTrash }) {
       const [projects, setProjects] = useState([]);
       // imageVersion: tăng khi nhận imagesUpdated → buộc recompute progress
       const [imageVersion, setImageVersion] = useState(0);
       // expandedProjectId: chỉ 1 công trình mở rộng tại 1 thời điểm
       const [expandedProjectId, setExpandedProjectId] = useState(null);
+      // longPressProjectId: card đang chờ context menu (P24)
+      const [longPressId, setLongPressId] = useState(null);
 
       useEffect(() => {
         setProjects(getProjects());
@@ -3296,6 +3517,7 @@
                           progress={p._progress}
                           isExpanded={expandedProjectId === p.projectId}
                           onToggle={() => handleToggle(p.projectId)}
+                          onLongPress={pid => setLongPressId(pid)}
                         />
                       ))}
                       {/* Ô trống giữ đủ 3 cột ở hàng cuối */}
@@ -3394,7 +3616,41 @@
               <span className="home-action-btn-icon">🏷️</span>
               Hashtag
             </button>
+            {(() => {
+              const trashCount = getDeletedProjects().length;
+              return (
+                <button className="home-action-btn" onClick={onOpenTrash} title="Thùng rác">
+                  <span className="home-action-btn-icon">🗑️</span>
+                  {trashCount > 0 && <span style={{fontSize:11,fontWeight:700,background:'#dc2626',color:'#fff',borderRadius:'50%',padding:'1px 5px',marginLeft:2}}>{trashCount}</span>}
+                </button>
+              );
+            })()}
           </div>
+
+          {/* Context menu: long-press trên card (P24) */}
+          {longPressId && (() => {
+            const proj = projects.find(p => p.projectId === longPressId);
+            return (
+              <div className="ctx-sheet" onClick={() => setLongPressId(null)}>
+                <div className="ctx-sheet-box" onClick={e => e.stopPropagation()}>
+                  <div className="ctx-sheet-handle" />
+                  <div className="ctx-sheet-title">{proj ? proj.projectName : ''}</div>
+                  <button className="ctx-sheet-btn" onClick={() => { setLongPressId(null); onSelectProject(longPressId); }}>
+                    <span className="ctx-sheet-icon">📂</span> Vào chi tiết
+                  </button>
+                  <button className="ctx-sheet-btn danger" onClick={() => {
+                    softDeleteProject(longPressId);
+                    setLongPressId(null);
+                  }}>
+                    <span className="ctx-sheet-icon">🗑️</span> Xóa công trình
+                  </button>
+                  <button className="ctx-sheet-btn" onClick={() => setLongPressId(null)}>
+                    <span className="ctx-sheet-icon">✕</span> Hủy
+                  </button>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Danh sách công trình — cuộn dọc */}
           <div className="page-content">
@@ -5947,6 +6203,10 @@
         );
       }
 
+      if (screen === 'trash') {
+        return <TrashScreen onBack={handleBack} />;
+      }
+
       if (screen === 'tag-manager') {
         return (
           <TagManager
@@ -5966,6 +6226,7 @@
           onSelectProject={projId => goTo('detail', projId)}
           onOpenTagManager={() => goTo('tag-manager')}
           onOpenSettings={() => goTo('settings')}
+          onOpenTrash={() => goTo('trash')}
         />
       );
     }
