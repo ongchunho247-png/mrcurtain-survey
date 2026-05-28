@@ -1497,7 +1497,7 @@
     // =============================================
     // STORAGE UTILS
     // =============================================
-    const APP_PROMPT_VERSION = 'P22'; // Cập nhật khi lên version mới
+    const APP_PROMPT_VERSION = 'P23'; // Cập nhật khi lên version mới
     const STORAGE_KEY = 'mrcurtain_survey_projects';
     const STORAGE_KEY_LEGACY = 'mrcurtain_projects'; // key cũ từ Prompt 2
     // Khai báo sớm để runDataMigration() dùng được (Prompt 14.2)
@@ -1506,10 +1506,149 @@
     const VIEW_KEY      = 'mrcurtain_survey_current_view';
     const SETTINGS_KEY  = 'mrcurtain_survey_settings';
 
+
+    /* ═══════════════════════════════════════════════════════════════════
+       P23 — IndexedDB wrapper (cache-based)
+       Reads are synchronous (from in-memory cache).
+       Writes update cache + async IDB — no await needed at call-site.
+    ═══════════════════════════════════════════════════════════════════ */
+    const _IDB_NAME    = 'mrcurtain_survey_db';
+    const _IDB_VERSION = 1;
+    const _IDB_STORE   = 'kv';
+
+    // In-memory cache: populated once by initStorage(), then kept in sync
+    const _cache = Object.create(null);
+
+    let _dbPromise = null;
+    function _getDB() {
+      if (!_dbPromise) {
+        _dbPromise = new Promise((resolve, reject) => {
+          const req = indexedDB.open(_IDB_NAME, _IDB_VERSION);
+          req.onupgradeneeded = e => {
+            e.target.result.createObjectStore(_IDB_STORE);
+          };
+          req.onsuccess  = e => resolve(e.target.result);
+          req.onerror    = e => reject(e.target.error);
+        });
+      }
+      return _dbPromise;
+    }
+
+    // Fire-and-forget IDB write (errors logged, not thrown)
+    function _idbSet(key, value) {
+      _getDB().then(db => {
+        const tx = db.transaction(_IDB_STORE, 'readwrite');
+        tx.objectStore(_IDB_STORE).put(value, key);
+      }).catch(err => console.warn('[IDB] set error', key, err));
+    }
+
+    function _idbDelete(key) {
+      _getDB().then(db => {
+        const tx = db.transaction(_IDB_STORE, 'readwrite');
+        tx.objectStore(_IDB_STORE).delete(key);
+      }).catch(err => console.warn('[IDB] delete error', key, err));
+    }
+
+    // Read all entries from IDB as { key: value }
+    function _idbGetAll() {
+      return _getDB().then(db => new Promise((resolve, reject) => {
+        const tx      = db.transaction(_IDB_STORE, 'readonly');
+        const store   = tx.objectStore(_IDB_STORE);
+        const result  = Object.create(null);
+        const reqKeys = store.getAllKeys();
+        reqKeys.onsuccess = () => {
+          const keys = reqKeys.result;
+          if (keys.length === 0) { resolve(result); return; }
+          let remaining = keys.length;
+          keys.forEach(k => {
+            const r = store.get(k);
+            r.onsuccess = () => { result[k] = r.result; if (--remaining === 0) resolve(result); };
+            r.onerror   = () => {                        if (--remaining === 0) resolve(result); };
+          });
+        };
+        reqKeys.onerror = () => resolve(result);
+      }));
+    }
+
+    /* ── Public cache-based localStorage shim ── */
+    function _lsGet(key) {
+      const v = _cache[key];
+      return (v === undefined || v === null) ? null : v;
+    }
+    function _lsSet(key, value) {
+      _cache[key] = value;
+      _idbSet(key, value);
+    }
+    function _lsRemove(key) {
+      delete _cache[key];
+      _idbDelete(key);
+    }
+    function _lsKeys() {
+      return Object.keys(_cache);
+    }
+
+    /**
+     * initStorage() — await once before any storage reads.
+     * 1. Opens IDB
+     * 2. IDB has data  → load into cache
+     * 3. IDB empty     → migrate from localStorage into IDB + cache (one-time)
+     * 4. Run migrateFromLegacyKey() + runDataMigration() on cache
+     */
+    async function initStorage() {
+      try {
+        const idbData = await _idbGetAll();
+        const idbHasData = Object.keys(idbData).length > 0;
+
+        if (idbHasData) {
+          // Load IDB → cache
+          Object.assign(_cache, idbData);
+          storageLog('INFO', 'khởi động', 'initStorage()',
+            'Loaded ' + Object.keys(idbData).length + ' keys from IndexedDB');
+        } else {
+          // First run on existing device: migrate localStorage → IDB + cache
+          const lsKeys = [
+            STORAGE_KEY, STORAGE_KEY_LEGACY,
+            IMAGES_KEY, TAGS_KEY, VIEW_KEY, SETTINGS_KEY, VERSION_KEY,
+          ];
+          for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            if (k && k.startsWith(BACKUP_KEY_PREFIX)) lsKeys.push(k);
+          }
+          let migrated = 0;
+          lsKeys.forEach(k => {
+            const v = _lsGet(k);
+            if (v !== null) { _cache[k] = v; _idbSet(k, v); migrated++; }
+          });
+          storageLog('INFO', 'khởi động', 'initStorage()',
+            migrated > 0
+              ? 'Migrated ' + migrated + ' keys from localStorage → IndexedDB'
+              : 'Fresh install — no localStorage data');
+        }
+
+        migrateFromLegacyKey();
+        runDataMigration();
+
+      } catch (err) {
+        // IDB unavailable (private browsing, etc.) — fall back to localStorage shim
+        console.warn('[IDB] initStorage failed, fallback to localStorage:', err);
+        const fbKeys = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (k) fbKeys.push(k);
+        }
+        fbKeys.forEach(k => {
+          const v = _lsGet(k);
+          if (v !== null) _cache[k] = v;
+        });
+        migrateFromLegacyKey();
+        runDataMigration();
+      }
+    }
+
     const SETTINGS_DEFAULT = { backgroundColor: 'white', userName: '' };
     function getSettings() {
       try {
-        const raw = localStorage.getItem(SETTINGS_KEY);
+        const raw = _lsGet(SETTINGS_KEY);
         if (!raw) return { ...SETTINGS_DEFAULT };
         const saved = { ...SETTINGS_DEFAULT, ...JSON.parse(raw) };
         // Migration: 'blue' → 'green'
@@ -1520,7 +1659,7 @@
     function saveSettings(patch) {
       try {
         const current = getSettings();
-        localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...current, ...patch }));
+        _lsSet(SETTINGS_KEY, JSON.stringify({ ...current, ...patch }));
       } catch (e) { console.warn('[Settings] Lỗi lưu:', e); }
     }
     const THEMES = {
@@ -1597,7 +1736,7 @@
         `  Lệnh đã chạy  : ${action}`,
         `  Mô tả         : ${description}`,
         detail ? `  Chi tiết       : ${detail}` : null,
-        `  Key localStorage: ${STORAGE_KEY}`,
+        `  Key IDB: ${STORAGE_KEY}`,
       ].filter(Boolean).join('\n');
       if (level === 'ERROR') console.error(entry);
       else console.info(entry);
@@ -1624,11 +1763,11 @@
     // --- Migration: chuyển dữ liệu từ key cũ sang key mới (chạy 1 lần) ---
     function migrateFromLegacyKey() {
       try {
-        const legacy = localStorage.getItem(STORAGE_KEY_LEGACY);
-        const current = localStorage.getItem(STORAGE_KEY);
+        const legacy = _lsGet(STORAGE_KEY_LEGACY);
+        const current = _lsGet(STORAGE_KEY);
         if (legacy && !current) {
-          localStorage.setItem(STORAGE_KEY, legacy);
-          localStorage.removeItem(STORAGE_KEY_LEGACY);
+          _lsSet(STORAGE_KEY, legacy);
+          _lsRemove(STORAGE_KEY_LEGACY);
           storageLog('INFO', 'khởi động', 'migrateFromLegacyKey()',
             `Đã migrate ${JSON.parse(legacy).length} công trình từ key cũ sang key mới`);
         }
@@ -1638,8 +1777,7 @@
       }
     }
 
-    // Chạy migration ngay khi script load
-    migrateFromLegacyKey();
+    // migrateFromLegacyKey() now runs inside initStorage()
 
     /* ═══════════════════════════════════════════════════════════════════════
        PROMPT 14.2 — HỆ THỐNG BẢO VỆ DỮ LIỆU localStorage KHI CẬP NHẬT APP
@@ -1664,25 +1802,21 @@
         const backupKey = BACKUP_KEY_PREFIX + ts;
         const backup  = {
           backedUpAt:   new Date().toISOString(),
-          dataVersion:  localStorage.getItem(VERSION_KEY) || 'unknown',
-          projects:     localStorage.getItem(STORAGE_KEY),
-          images:       localStorage.getItem(IMAGES_KEY),
-          tags:         localStorage.getItem(TAGS_KEY),
-          currentView:  localStorage.getItem(VIEW_KEY),
+          dataVersion:  _lsGet(VERSION_KEY) || 'unknown',
+          projects:     _lsGet(STORAGE_KEY),
+          images:       _lsGet(IMAGES_KEY),
+          tags:         _lsGet(TAGS_KEY),
+          currentView:  _lsGet(VIEW_KEY),
         };
-        localStorage.setItem(backupKey, JSON.stringify(backup));
+        _lsSet(backupKey, JSON.stringify(backup));
         storageLog('INFO', 'khởi động', 'backupBeforeMigration()',
           'Đã backup dữ liệu trước migration', `backupKey: ${backupKey}`);
         /* Dọn backup cũ hơn 5 bản để không tốn bộ nhớ */
         try {
-          const backupKeys = [];
-          for (let i = 0; i < localStorage.length; i++) {
-            const k = localStorage.key(i);
-            if (k && k.startsWith(BACKUP_KEY_PREFIX)) backupKeys.push(k);
-          }
+          const backupKeys = _lsKeys().filter(k => k.startsWith(BACKUP_KEY_PREFIX));
           backupKeys.sort(); // sắp xếp theo timestamp (ISO string → sort = thứ tự thời gian)
           while (backupKeys.length > 5) {
-            localStorage.removeItem(backupKeys.shift()); // xóa bản cũ nhất
+            _lsRemove(backupKeys.shift()); // xóa bản cũ nhất
           }
         } catch (_) { /* không quan trọng */ }
         return backupKey;
@@ -1743,7 +1877,7 @@
     /* ── Hàm chính: chạy toàn bộ migration cần thiết ────────────────────── */
     function runDataMigration() {
       try {
-        const currentVersion = localStorage.getItem(VERSION_KEY);
+        const currentVersion = _lsGet(VERSION_KEY);
 
         /* Đã đúng version → không làm gì */
         if (currentVersion === DATA_VERSION) return;
@@ -1760,13 +1894,13 @@
 
         /* ── Migrate projects ── */
         try {
-          const rawProjects = localStorage.getItem(STORAGE_KEY);
+          const rawProjects = _lsGet(STORAGE_KEY);
           if (rawProjects) {
             const parsed = JSON.parse(rawProjects);
             if (Array.isArray(parsed) && parsed.length > 0) {
               const { data: migrated, changed } = migrateProjects_v1_1(parsed);
               if (changed) {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
+                _lsSet(STORAGE_KEY, JSON.stringify(migrated));
                 storageLog('INFO', 'khởi động', 'runDataMigration()',
                   `Đã migrate ${parsed.length} công trình (bổ sung field mới)`);
                 projectsMigrated = true;
@@ -1781,13 +1915,13 @@
 
         /* ── Migrate images ── */
         try {
-          const rawImages = localStorage.getItem(IMAGES_KEY);
+          const rawImages = _lsGet(IMAGES_KEY);
           if (rawImages) {
             const parsed = JSON.parse(rawImages);
             if (Array.isArray(parsed) && parsed.length > 0) {
               const { data: migrated, changed } = migrateImages_v1_2(parsed);
               if (changed) {
-                localStorage.setItem(IMAGES_KEY, JSON.stringify(migrated));
+                _lsSet(IMAGES_KEY, JSON.stringify(migrated));
                 storageLog('INFO', 'khởi động', 'runDataMigration()',
                   `Đã migrate ${parsed.length} ảnh (bổ sung field mới)`);
                 imagesMigrated = true;
@@ -1800,7 +1934,7 @@
         }
 
         /* ── Lưu version mới sau khi migrate thành công ── */
-        localStorage.setItem(VERSION_KEY, DATA_VERSION);
+        _lsSet(VERSION_KEY, DATA_VERSION);
         storageLog('INFO', 'khởi động', 'runDataMigration()',
           `Migration hoàn tất`,
           `version: ${DATA_VERSION} | projects: ${projectsMigrated} | images: ${imagesMigrated}`);
@@ -1812,8 +1946,7 @@
       }
     }
 
-    /* ── Chạy migration ngay khi script load (sau migrateFromLegacyKey) ── */
-    runDataMigration();
+    /* runDataMigration() now runs inside initStorage() */
 
     /**
      * Đọc danh sách công trình từ localStorage.
@@ -1821,7 +1954,7 @@
      */
     function getProjects() {
       try {
-        const raw = localStorage.getItem(STORAGE_KEY);
+        const raw = _lsGet(STORAGE_KEY);
         if (!raw) return [];                          // Chưa có dữ liệu → OK
         const parsed = JSON.parse(raw);               // Có thể throw nếu JSON lỗi
         if (!Array.isArray(parsed)) {
@@ -1845,7 +1978,7 @@
     function saveProjects(projects) {
       try {
         if (!Array.isArray(projects)) throw new Error('projects phải là Array');
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
+        _lsSet(STORAGE_KEY, JSON.stringify(projects));
       } catch (err) {
         storageLog('ERROR', 'lưu-dữ-liệu', 'saveProjects()',
           'Lỗi ghi localStorage', String(err));
@@ -1927,7 +2060,7 @@
      */
     function getImages(projectId) {
       try {
-        const raw = localStorage.getItem(IMAGES_KEY);
+        const raw = _lsGet(IMAGES_KEY);
         if (!raw) return [];
         const all = JSON.parse(raw);
         if (!Array.isArray(all)) return [];
@@ -1951,7 +2084,7 @@
      */
     function getDeletedImages(projectId) {
       try {
-        const raw = localStorage.getItem(IMAGES_KEY);
+        const raw = _lsGet(IMAGES_KEY);
         if (!raw) return [];
         const all = JSON.parse(raw);
         if (!Array.isArray(all)) return [];
@@ -2048,12 +2181,12 @@
      */
     function permanentDeleteImage(imageId) {
       try {
-        const raw = localStorage.getItem(IMAGES_KEY);
+        const raw = _lsGet(IMAGES_KEY);
         if (!raw) return;
         const all = JSON.parse(raw);
         if (!Array.isArray(all)) throw new Error('Images store không phải Array');
         const filtered = all.filter(img => img.imageId !== imageId);
-        localStorage.setItem(IMAGES_KEY, JSON.stringify(filtered));
+        _lsSet(IMAGES_KEY, JSON.stringify(filtered));
         storageLog('INFO', 'chi-tiết', 'permanentDeleteImage()',
           `Xóa vĩnh viễn imageId: ${imageId}`);
       } catch (err) {
@@ -2070,7 +2203,7 @@
      */
     function addImage(data) {
       try {
-        const raw = localStorage.getItem(IMAGES_KEY);
+        const raw = _lsGet(IMAGES_KEY);
         const all = raw ? JSON.parse(raw) : [];
         if (!Array.isArray(all)) throw new Error('Images store không phải Array');
 
@@ -2094,7 +2227,7 @@
           updatedAt:  now,
         };
 
-        localStorage.setItem(IMAGES_KEY, JSON.stringify([...all, image]));
+        _lsSet(IMAGES_KEY, JSON.stringify([...all, image]));
 
         // Cập nhật imageCount trên project
         const projects = getProjects();
@@ -2126,11 +2259,11 @@
      */
     function deleteImage(imageId, projectId) {
       try {
-        const raw = localStorage.getItem(IMAGES_KEY);
+        const raw = _lsGet(IMAGES_KEY);
         if (!raw) return;
         const all = JSON.parse(raw);
         const filtered = all.filter(img => img.imageId !== imageId);
-        localStorage.setItem(IMAGES_KEY, JSON.stringify(filtered));
+        _lsSet(IMAGES_KEY, JSON.stringify(filtered));
 
         // Cập nhật imageCount trên project
         if (projectId) {
@@ -2243,7 +2376,7 @@
      */
     function updateImageInfo(imageId, updates) {
       try {
-        const raw = localStorage.getItem(IMAGES_KEY);
+        const raw = _lsGet(IMAGES_KEY);
         if (!raw) {
           storageLog('ERROR', 'image-detail', 'updateImageInfo()',
             'IMAGES_KEY rỗng, không tìm thấy ảnh', `imageId: ${imageId}`);
@@ -2265,7 +2398,7 @@
           updatedAt: new Date().toISOString(),
         };
         all[idx] = updated;
-        localStorage.setItem(IMAGES_KEY, JSON.stringify(all));
+        _lsSet(IMAGES_KEY, JSON.stringify(all));
 
         storageLog('INFO', 'image-detail', 'updateImageInfo()',
           `Đã cập nhật thông tin ảnh`, `imageId: ${imageId}`);
@@ -2284,7 +2417,7 @@
      */
     function getImageById(imageId) {
       try {
-        const raw = localStorage.getItem(IMAGES_KEY);
+        const raw = _lsGet(IMAGES_KEY);
         if (!raw) return null;
         const all = JSON.parse(raw);
         return Array.isArray(all) ? (all.find(img => img.imageId === imageId) || null) : null;
@@ -2361,21 +2494,21 @@
      */
     function getTags() {
       try {
-        const raw = localStorage.getItem(TAGS_KEY);
+        const raw = _lsGet(TAGS_KEY);
         if (raw) {
           const parsed = JSON.parse(raw);
           if (Array.isArray(parsed) && parsed.length > 0) {
             // Migration: bổ sung nhóm mới nếu localStorage cũ chưa có
             const migrated = seedMissingGroups(parsed);
             if (migrated !== parsed) {
-              localStorage.setItem(TAGS_KEY, JSON.stringify(migrated));
+              _lsSet(TAGS_KEY, JSON.stringify(migrated));
             }
             return migrated;
           }
         }
         // Khởi tạo lần đầu
         const defaults = buildDefaultTags();
-        localStorage.setItem(TAGS_KEY, JSON.stringify(defaults));
+        _lsSet(TAGS_KEY, JSON.stringify(defaults));
         storageLog('INFO', 'tag-manager', 'getTags()',
           'Khởi tạo tag mặc định', `Tổng: ${defaults.length} tags`);
         return defaults;
@@ -2408,7 +2541,7 @@
      */
     function saveTags(tags) {
       try {
-        localStorage.setItem(TAGS_KEY, JSON.stringify(tags));
+        _lsSet(TAGS_KEY, JSON.stringify(tags));
       } catch (err) {
         storageLog('ERROR', 'tag-manager', 'saveTags()',
           'Lỗi lưu tags', formatError(err));
@@ -2579,7 +2712,7 @@
           currentImageId:   imageId   || null,
           updatedAt:        new Date().toISOString(),
         };
-        localStorage.setItem(VIEW_KEY, JSON.stringify(data));
+        _lsSet(VIEW_KEY, JSON.stringify(data));
       } catch (err) {
         // Lỗi ghi localStorage không được crash app
         storageLog('ERROR', 'navigation', 'saveCurrentView()',
@@ -2595,7 +2728,7 @@
     function restoreCurrentView() {
       const defaultState = { screen: 'list', selectedProjectId: null, selectedImageId: null };
       try {
-        const raw = localStorage.getItem(VIEW_KEY);
+        const raw = _lsGet(VIEW_KEY);
         if (!raw) return defaultState;
         const saved = JSON.parse(raw);
         if (!saved || !saved.currentView) return defaultState;
@@ -5679,11 +5812,26 @@
        APP — Router chính
     ───────────────────────────────────────────── */
     function App() {
-      React.useMemo(() => { applyTheme(getSettings().backgroundColor); }, []);
-      const initial = restoreCurrentView();
-      const [screen,             setScreen]             = useState(initial.screen);
-      const [selectedProjectId,  setSelectedProjectId]  = useState(initial.selectedProjectId);
-      const [selectedImageId,    setSelectedImageId]    = useState(initial.selectedImageId);
+      const [storageReady, setStorageReady] = useState(false);
+      const [screen,             setScreen]             = useState('list');
+      const [selectedProjectId,  setSelectedProjectId]  = useState(null);
+      const [selectedImageId,    setSelectedImageId]    = useState(null);
+
+      // ── P23: initStorage on mount ──────────────────────────────
+      useEffect(() => {
+        initStorage().then(() => {
+          applyTheme(getSettings().backgroundColor);
+          const initial = restoreCurrentView();
+          setScreen(initial.screen);
+          setSelectedProjectId(initial.selectedProjectId);
+          setSelectedImageId(initial.selectedImageId);
+          setStorageReady(true);
+        }).catch(err => {
+          console.error('[App] initStorage failed:', err);
+          applyTheme('white');
+          setStorageReady(true);
+        });
+      }, []);
 
       // ── Navigation history (Prompt 14.7) ──────────────────────
       const navStackRef  = React.useRef([]);
@@ -5767,6 +5915,15 @@
       // Ref để swipe handler luôn có handleBack mới nhất (tránh stale closure)
       const handleBackRef = React.useRef(handleBack);
       useEffect(() => { handleBackRef.current = handleBack; });
+
+      if (!storageReady) return (
+        <div style={{ display:'flex', justifyContent:'center', alignItems:'center', height:'100vh', fontFamily:'Arial,sans-serif', fontSize:'16px', color:'#1f2937', background:'#f9fafb' }}>
+          <div style={{ textAlign:'center' }}>
+            <div style={{ fontSize:'28px', marginBottom:'12px' }}>⏳</div>
+            <div>Đang tải dữ liệu...</div>
+          </div>
+        </div>
+      );
 
       if (screen === 'create') {
         return (
