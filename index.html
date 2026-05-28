@@ -1588,17 +1588,16 @@
     }
 
     /**
-     * initStorage() — await once before any storage reads.
+     * initStorage() — returns Promise; call once before any storage reads.
      * 1. Opens IDB
      * 2. IDB has data  → load into cache
      * 3. IDB empty     → migrate from localStorage into IDB + cache (one-time)
      * 4. Run migrateFromLegacyKey() + runDataMigration() on cache
+     * NOTE: Uses Promise chain (no async/await) for Babel standalone compatibility.
      */
-    async function initStorage() {
-      try {
-        const idbData = await _idbGetAll();
-        const idbHasData = Object.keys(idbData).length > 0;
-
+    function initStorage() {
+      return _idbGetAll().then(function(idbData) {
+        var idbHasData = Object.keys(idbData).length > 0;
         if (idbHasData) {
           // Load IDB → cache
           Object.assign(_cache, idbData);
@@ -1606,17 +1605,17 @@
             'Loaded ' + Object.keys(idbData).length + ' keys from IndexedDB');
         } else {
           // First run on existing device: migrate localStorage → IDB + cache
-          const lsKeys = [
+          var lsKeys = [
             STORAGE_KEY, STORAGE_KEY_LEGACY,
             IMAGES_KEY, TAGS_KEY, VIEW_KEY, SETTINGS_KEY, VERSION_KEY,
           ];
-          for (let i = 0; i < localStorage.length; i++) {
-            const k = localStorage.key(i);
+          for (var i = 0; i < localStorage.length; i++) {
+            var k = localStorage.key(i);
             if (k && k.startsWith(BACKUP_KEY_PREFIX)) lsKeys.push(k);
           }
-          let migrated = 0;
-          lsKeys.forEach(k => {
-            const v = _lsGet(k);
+          var migrated = 0;
+          lsKeys.forEach(function(k) {
+            var v = localStorage.getItem(k);   // read directly from localStorage
             if (v !== null) { _cache[k] = v; _idbSet(k, v); migrated++; }
           });
           storageLog('INFO', 'khởi động', 'initStorage()',
@@ -1624,25 +1623,18 @@
               ? 'Migrated ' + migrated + ' keys from localStorage → IndexedDB'
               : 'Fresh install — no localStorage data');
         }
-
         migrateFromLegacyKey();
         runDataMigration();
-
-      } catch (err) {
+      }).catch(function(err) {
         // IDB unavailable (private browsing, etc.) — fall back to localStorage shim
         console.warn('[IDB] initStorage failed, fallback to localStorage:', err);
-        const fbKeys = [];
-        for (let i = 0; i < localStorage.length; i++) {
-          const k = localStorage.key(i);
-          if (k) fbKeys.push(k);
+        for (var i = 0; i < localStorage.length; i++) {
+          var k = localStorage.key(i);
+          if (k) { var v = localStorage.getItem(k); if (v !== null) _cache[k] = v; }
         }
-        fbKeys.forEach(k => {
-          const v = _lsGet(k);
-          if (v !== null) _cache[k] = v;
-        });
         migrateFromLegacyKey();
         runDataMigration();
-      }
+      });
     }
 
     const SETTINGS_DEFAULT = { backgroundColor: 'white', userName: '' };
