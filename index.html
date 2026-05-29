@@ -243,7 +243,7 @@
     .form-input, .form-textarea, .form-select {
       width: 100%; padding: 13px 14px; font-size: 15px;
       border: 1.5px solid var(--border); border-radius: var(--radius-sm);
-      background: white; color: var(--text); outline: none;
+      background: white; color: #1a1a1a; outline: none;
       transition: border-color 0.15s ease, box-shadow 0.15s ease;
       -webkit-appearance: none; appearance: none; font-family: inherit;
     }
@@ -1566,7 +1566,7 @@
     // =============================================
     // STORAGE UTILS
     // =============================================
-    const APP_PROMPT_VERSION = 'P25'; // Cập nhật khi lên version mới
+    const APP_PROMPT_VERSION = 'P25b'; // Cập nhật khi lên version mới
     const STORAGE_KEY = 'mrcurtain_survey_projects';
     const STORAGE_KEY_LEGACY = 'mrcurtain_projects'; // key cũ từ Prompt 2
     // Khai báo sớm để runDataMigration() dùng được (Prompt 14.2)
@@ -5607,7 +5607,7 @@
                         
                         <div className="info-row-body">
                           <div className="info-row-label">Địa chỉ</div>
-                          <div className={`info-row-value${!project.address ? ' empty' : ''}`}>
+                          <div className={`info-row-value${!project.address ? ' empty' : ''}`} style={{whiteSpace:'pre-wrap'}}>
                             {project.address || 'Chưa nhập'}
                           </div>
                         </div>

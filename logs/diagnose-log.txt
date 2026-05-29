@@ -1250,3 +1250,24 @@ are terminated then try again. If it still fails, a git process
 may have crashed in this repository earlier:
 remove the file manually to continue.
 ============================================================
+
+────────────────────────────────────────────────────────────
+[07:28:25 29/5/2026] DEPLOY THANH CONG
+Commit  : P25: Add edit mode for project info section in ProjectDetail
+Branch  : main
+Hash    : a6aca35 P25: Add edit mode for project info section in ProjectDetail
+Remote  : https://github.com/ongchunho247-png/mrcurtain-survey.git
+Netlify : tu deploy tu branch main (~30 giay)
+────────────────────────────────────────────────────────────
+
+============================================================
+[06:46:35 30/5/2026] LỖI DEPLOY
+Ly do : git add that bai
+error         : fatal: Unable to create '/sessions/pensive-bold-bardeen/mnt/web app mobile khao sat/.git/index.lock': File exists.
+
+Another git process seems to be running in this repository, e.g.
+an editor opened by 'git commit'. Please make sure all processes
+are terminated then try again. If it still fails, a git process
+may have crashed in this repository earlier:
+remove the file manually to continue.
+============================================================
