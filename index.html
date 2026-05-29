@@ -2041,17 +2041,19 @@
       const projects = getProjects();
       const now = new Date().toISOString();
       const project = {
-        projectId:    generateId(),
-        projectName:  data.projectName  || '',
-        customerName: data.customerName || '',
-        address:      data.address      || '',
-        surveyPerson: data.surveyPerson || '',
-        department:   data.department   || 'sale',
-        surveyDate:   data.surveyDate   || '',
-        generalNote:  data.generalNote  || '',
-        imageCount:   0,
-        createdAt:    now,
-        updatedAt:    now,
+        projectId:     generateId(),
+        projectName:   data.projectName   || '',
+        customerName:  data.customerName  || '',
+        contactPerson: data.contactPerson || '',
+        contactPhone:  data.contactPhone  || '',
+        address:       data.address       || '',
+        surveyPerson:  data.surveyPerson  || '',
+        department:    data.department    || 'sale',
+        surveyDate:    data.surveyDate    || '',
+        generalNote:   data.generalNote   || '',
+        imageCount:    0,
+        createdAt:     now,
+        updatedAt:     now,
       };
       saveProjects([project, ...projects]);
       storageLog('INFO', 'tạo-công-trình', 'addProject()',

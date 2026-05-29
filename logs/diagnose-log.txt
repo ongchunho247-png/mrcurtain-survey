@@ -1200,3 +1200,17 @@ Hash    : a4c16fd P24b: Fix click vào card sau long-press
 Remote  : https://github.com/ongchunho247-png/mrcurtain-survey.git
 Netlify : tu deploy tu branch main (~30 giay)
 ────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────
+[22:28:22 28/5/2026] DEPLOY THANH CONG
+Commit  : P24: Fix export freeze trên mobile
+
+- ZIP ảnh: bỏ html2canvas, thay bằng Canvas API trực tiếp (nhanh 10-20×)
+  renderImageCardCanvas: load image → vẽ canvas → JPEG 0.78
+- PDF: giảm scale mobile 1.5 → 1.0 (giảm canvas size ~55%)
+- Fix click card: lpFired ref tránh nhầm long-press với normal tap
+Branch  : main
+Hash    : 73eaa49 P24: Fix export freeze trên mobile
+Remote  : https://github.com/ongchunho247-png/mrcurtain-survey.git
+Netlify : tu deploy tu branch main (~30 giay)
+────────────────────────────────────────────────────────────
