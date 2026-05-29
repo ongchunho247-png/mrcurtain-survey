@@ -1214,3 +1214,39 @@ Hash    : 73eaa49 P24: Fix export freeze trên mobile
 Remote  : https://github.com/ongchunho247-png/mrcurtain-survey.git
 Netlify : tu deploy tu branch main (~30 giay)
 ────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────
+[07:16:34 29/5/2026] DEPLOY THANH CONG
+Commit  : P24: Fix contactPerson/contactPhone không lưu khi tạo mới
+
+- addProject() thiếu contactPerson và contactPhone trong object project
+- Đã bổ sung 2 field vào addProject()
+Branch  : main
+Hash    : 795854b P24: Fix contactPerson/contactPhone không lưu khi tạo mới
+Remote  : https://github.com/ongchunho247-png/mrcurtain-survey.git
+Netlify : tu deploy tu branch main (~30 giay)
+────────────────────────────────────────────────────────────
+
+============================================================
+[07:27:23 29/5/2026] LỖI DEPLOY
+Ly do : git add that bai
+error         : fatal: Unable to create '/sessions/pensive-bold-bardeen/mnt/web app mobile khao sat/.git/index.lock': File exists.
+
+Another git process seems to be running in this repository, e.g.
+an editor opened by 'git commit'. Please make sure all processes
+are terminated then try again. If it still fails, a git process
+may have crashed in this repository earlier:
+remove the file manually to continue.
+============================================================
+
+============================================================
+[07:27:30 29/5/2026] LỖI DEPLOY
+Ly do : git add that bai
+error         : fatal: Unable to create '/sessions/pensive-bold-bardeen/mnt/web app mobile khao sat/.git/index.lock': File exists.
+
+Another git process seems to be running in this repository, e.g.
+an editor opened by 'git commit'. Please make sure all processes
+are terminated then try again. If it still fails, a git process
+may have crashed in this repository earlier:
+remove the file manually to continue.
+============================================================

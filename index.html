@@ -731,7 +731,20 @@
       padding: 12px 14px; cursor: pointer;
       -webkit-tap-highlight-color: transparent; user-select: none;
     }
-    .info-section-toggle-title {
+    .btn-edit-info {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-right: 6px;
+  line-height: 1.4;
+}
+.btn-edit-info:active { opacity: 0.8; }
+.info-section-toggle-title {
       font-size: 12px; font-weight: 700; color: var(--text-secondary);
       text-transform: uppercase; letter-spacing: 0.7px; flex-shrink: 0;
     }
@@ -1553,7 +1566,7 @@
     // =============================================
     // STORAGE UTILS
     // =============================================
-    const APP_PROMPT_VERSION = 'P24'; // Cập nhật khi lên version mới
+    const APP_PROMPT_VERSION = 'P25'; // Cập nhật khi lên version mới
     const STORAGE_KEY = 'mrcurtain_survey_projects';
     const STORAGE_KEY_LEGACY = 'mrcurtain_projects'; // key cũ từ Prompt 2
     // Khai báo sớm để runDataMigration() dùng được (Prompt 14.2)
@@ -5136,6 +5149,8 @@
       const [infoExpanded, setInfoExpanded]      = useState(false);  // Prompt 14.1
       const [exportResult, setExportResult]      = useState(null);   // { blob, filename, mimeType }
       const [showShareModal, setShowShareModal]  = useState(false);
+      const [editMode, setEditMode]              = useState(false);
+      const [editForm, setEditForm]              = useState(null);
 
       // Reload project khi imageCount thay đổi (sau khi thêm/xóa ảnh)
       const loadProject = () => {
@@ -5447,110 +5462,207 @@
               {/* Toggle header — bấm để mở/đóng */}
               <div
                 className="info-section-toggle-header"
-                onClick={() => setInfoExpanded(v => !v)}
+                onClick={() => { if (!editMode) setInfoExpanded(v => !v); }}
                 style={{borderBottom: infoExpanded ? '1px solid var(--border)' : 'none'}}
               >
                 <div className="info-section-toggle-title">Thông tin</div>
-                {!infoExpanded && (
+                {!infoExpanded && !editMode && (
                   <div className="info-section-toggle-preview">{project.projectName}</div>
                 )}
-                <span className={`info-section-toggle-arrow${infoExpanded ? ' open' : ''}`}>▼</span>
+                {infoExpanded && !editMode && (
+                  <button
+                    className="btn-edit-info"
+                    onClick={e => {
+                      e.stopPropagation();
+                      setEditForm({
+                        projectName:   project.projectName   || '',
+                        customerName:  project.customerName  || '',
+                        contactPerson: project.contactPerson || '',
+                        contactPhone:  project.contactPhone  || '',
+                        address:       project.address       || '',
+                        surveyPerson:  project.surveyPerson  || '',
+                        department:    project.department    || 'sale',
+                        surveyDate:    project.surveyDate    || '',
+                        generalNote:   project.generalNote   || '',
+                      });
+                      setEditMode(true);
+                    }}
+                  >✏️ Sửa</button>
+                )}
+                {!editMode && (
+                  <span className={`info-section-toggle-arrow${infoExpanded ? ' open' : ''}`}>▼</span>
+                )}
               </div>
 
               {/* Nội dung — chỉ render khi mở */}
               {infoExpanded && (
                 <div>
-                  {/* Thông tin công trình */}
-                  <div className="info-row">
-                    
-                    <div className="info-row-body">
-                      <div className="info-row-label">Tên công trình</div>
-                      <div className="info-row-value">{project.projectName}</div>
-                    </div>
-                  </div>
-                  <div className="info-row">
-                    
-                    <div className="info-row-body">
-                      <div className="info-row-label">Khách hàng</div>
-                      <div className="info-row-value">{project.customerName}</div>
-                    </div>
-                  </div>
-                  <div className="info-row">
-                    
-                    <div className="info-row-body">
-                      <div className="info-row-label">Người liên hệ</div>
-                      <div className={`info-row-value${!project.contactPerson ? ' empty' : ''}`}>
-                        {project.contactPerson || 'Chưa có'}
+                  {editMode && editForm ? (
+                    <div style={{padding:'12px 14px'}}>
+                      {/* —— Form chỉnh sửa —— */}
+                      <div className="form-group" style={{marginBottom:10}}>
+                        <label className="form-label">Tên công trình</label>
+                        <input className="form-input" type="text" value={editForm.projectName}
+                          onChange={e => setEditForm(f => ({...f, projectName: e.target.value}))} />
+                      </div>
+                      <div className="form-group" style={{marginBottom:10}}>
+                        <label className="form-label">Khách hàng</label>
+                        <input className="form-input" type="text" value={editForm.customerName}
+                          onChange={e => setEditForm(f => ({...f, customerName: e.target.value}))} />
+                      </div>
+                      <div className="form-group" style={{marginBottom:10}}>
+                        <label className="form-label">Người liên hệ</label>
+                        <input className="form-input" type="text" value={editForm.contactPerson}
+                          onChange={e => setEditForm(f => ({...f, contactPerson: e.target.value}))} />
+                      </div>
+                      <div className="form-group" style={{marginBottom:10}}>
+                        <label className="form-label">Số điện thoại</label>
+                        <input className="form-input" type="tel" value={editForm.contactPhone}
+                          onChange={e => setEditForm(f => ({...f, contactPhone: e.target.value}))} />
+                      </div>
+                      <div className="form-group" style={{marginBottom:10}}>
+                        <label className="form-label">Địa chỉ</label>
+                        <input className="form-input" type="text" value={editForm.address}
+                          onChange={e => setEditForm(f => ({...f, address: e.target.value}))} />
+                      </div>
+                      <div style={{borderTop:'1px solid var(--border)', margin:'8px 0 10px', paddingTop:10}}>
+                        <div style={{fontWeight:600, fontSize:'13px', color:'var(--text-secondary)', marginBottom:8}}>
+                          Thông tin khảo sát
+                        </div>
+                      </div>
+                      <div className="form-group" style={{marginBottom:10}}>
+                        <label className="form-label">Người khảo sát</label>
+                        <input className="form-input" type="text" value={editForm.surveyPerson}
+                          onChange={e => setEditForm(f => ({...f, surveyPerson: e.target.value}))} />
+                      </div>
+                      <div className="form-group" style={{marginBottom:10}}>
+                        <label className="form-label">Bộ phận</label>
+                        <select className="form-input" value={editForm.department}
+                          onChange={e => setEditForm(f => ({...f, department: e.target.value}))}>
+                          <option value="sale">Sale</option>
+                          <option value="technical">Kỹ thuật</option>
+                        </select>
+                      </div>
+                      <div className="form-group" style={{marginBottom:10}}>
+                        <label className="form-label">Ngày khảo sát</label>
+                        <input className="form-input" type="date" value={editForm.surveyDate}
+                          onChange={e => setEditForm(f => ({...f, surveyDate: e.target.value}))} />
+                      </div>
+                      <div className="form-group" style={{marginBottom:10}}>
+                        <label className="form-label">Ghi chú chung</label>
+                        <textarea className="form-input" rows={3} value={editForm.generalNote}
+                          onChange={e => setEditForm(f => ({...f, generalNote: e.target.value}))}
+                          style={{resize:'vertical'}} />
+                      </div>
+                      <div style={{display:'flex', gap:10, marginTop:14}}>
+                        <button className="btn-primary" style={{flex:1}}
+                          onClick={() => {
+                            updateProject(projectId, editForm);
+                            loadProject();
+                            setEditMode(false);
+                            setEditForm(null);
+                          }}
+                        >✔ Lưu</button>
+                        <button className="btn-secondary" style={{flex:1}}
+                          onClick={() => { setEditMode(false); setEditForm(null); }}
+                        >✕ Hủy</button>
                       </div>
                     </div>
-                  </div>
-                  <div className="info-row">
-                    
-                    <div className="info-row-body">
-                      <div className="info-row-label">Số điện thoại</div>
-                      <div className={`info-row-value${!project.contactPhone ? ' empty' : ''}`}>
-                        {project.contactPhone || 'Chưa có'}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="info-row">
-                    
-                    <div className="info-row-body">
-                      <div className="info-row-label">Địa chỉ</div>
-                      <div className={`info-row-value${!project.address ? ' empty' : ''}`}>
-                        {project.address || 'Chưa nhập'}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Thông tin khảo sát */}
-                  <div className="info-section-title" style={{
-                    margin:'4px 0 0', borderTop:'1px solid var(--border)',
-                    padding:'10px 14px 4px'
-                  }}>
-                    Thông tin khảo sát
-                  </div>
-                  <div className="info-row">
-                    
-                    <div className="info-row-body">
-                      <div className="info-row-label">Người khảo sát</div>
-                      <div className="info-row-value">{project.surveyPerson}</div>
-                    </div>
-                  </div>
-                  <div className="info-row">
-                    
-                    <div className="info-row-body">
-                      <div className="info-row-label">Bộ phận</div>
-                      <div className="info-row-value">{getDeptLabel(project.department)}</div>
-                    </div>
-                  </div>
-                  <div className="info-row">
-                    
-                    <div className="info-row-body">
-                      <div className="info-row-label">Ngày khảo sát</div>
-                      <div className="info-row-value">{formatDate(project.surveyDate)}</div>
-                    </div>
-                  </div>
-
-                  {/* Ghi chú chung */}
-                  {project.generalNote ? (
-                    <>
-                      <div className="info-section-title" style={{
-                        margin:'4px 0 0', borderTop:'1px solid var(--border)',
-                        padding:'10px 14px 4px'
-                      }}>
-                        Ghi chú chung
+                  ) : (
+                    <div>
+                      {/* Thông tin công trình */}
+                      <div className="info-row">
+                        
+                        <div className="info-row-body">
+                          <div className="info-row-label">Tên công trình</div>
+                          <div className="info-row-value">{project.projectName}</div>
+                        </div>
                       </div>
                       <div className="info-row">
                         
                         <div className="info-row-body">
-                          <div className="info-row-value" style={{whiteSpace:'pre-wrap', fontStyle:'italic'}}>
-                            {project.generalNote}
+                          <div className="info-row-label">Khách hàng</div>
+                          <div className="info-row-value">{project.customerName}</div>
+                        </div>
+                      </div>
+                      <div className="info-row">
+                        
+                        <div className="info-row-body">
+                          <div className="info-row-label">Người liên hệ</div>
+                          <div className={`info-row-value${!project.contactPerson ? ' empty' : ''}`}>
+                            {project.contactPerson || 'Chưa có'}
                           </div>
                         </div>
                       </div>
-                    </>
-                  ) : null}
+                      <div className="info-row">
+                        
+                        <div className="info-row-body">
+                          <div className="info-row-label">Số điện thoại</div>
+                          <div className={`info-row-value${!project.contactPhone ? ' empty' : ''}`}>
+                            {project.contactPhone || 'Chưa có'}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="info-row">
+                        
+                        <div className="info-row-body">
+                          <div className="info-row-label">Địa chỉ</div>
+                          <div className={`info-row-value${!project.address ? ' empty' : ''}`}>
+                            {project.address || 'Chưa nhập'}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Thông tin khảo sát */}
+                      <div className="info-section-title" style={{
+                        margin:'4px 0 0', borderTop:'1px solid var(--border)',
+                        padding:'10px 14px 4px'
+                      }}>
+                        Thông tin khảo sát
+                      </div>
+                      <div className="info-row">
+                        
+                        <div className="info-row-body">
+                          <div className="info-row-label">Người khảo sát</div>
+                          <div className="info-row-value">{project.surveyPerson}</div>
+                        </div>
+                      </div>
+                      <div className="info-row">
+                        
+                        <div className="info-row-body">
+                          <div className="info-row-label">Bộ phận</div>
+                          <div className="info-row-value">{getDeptLabel(project.department)}</div>
+                        </div>
+                      </div>
+                      <div className="info-row">
+                        
+                        <div className="info-row-body">
+                          <div className="info-row-label">Ngày khảo sát</div>
+                          <div className="info-row-value">{formatDate(project.surveyDate)}</div>
+                        </div>
+                      </div>
+
+                      {/* Ghi chú chung */}
+                      {project.generalNote ? (
+                        <>
+                          <div className="info-section-title" style={{
+                            margin:'4px 0 0', borderTop:'1px solid var(--border)',
+                            padding:'10px 14px 4px'
+                          }}>
+                            Ghi chú chung
+                          </div>
+                          <div className="info-row">
+                            
+                            <div className="info-row-body">
+                              <div className="info-row-value" style={{whiteSpace:'pre-wrap', fontStyle:'italic'}}>
+                                {project.generalNote}
+                              </div>
+                            </div>
+                          </div>
+                        </>
+                      ) : null}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
