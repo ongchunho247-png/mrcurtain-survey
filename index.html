@@ -1585,7 +1585,7 @@
     // =============================================
     // STORAGE UTILS
     // =============================================
-    const APP_PROMPT_VERSION = 'P27b'; // Cập nhật khi lên version mới
+    const APP_PROMPT_VERSION = 'P27c'; // Cập nhật khi lên version mới
     const STORAGE_KEY = 'mrcurtain_survey_projects';
     const STORAGE_KEY_LEGACY = 'mrcurtain_projects'; // key cũ từ Prompt 2
     // Khai báo sớm để runDataMigration() dùng được (Prompt 14.2)
@@ -4593,14 +4593,6 @@
             {/* Dòng 7: ngày */}
             <span className="photo-thumb-date">{formatDate(img.updatedAt || img.createdAt)}</span>
           </div>
-        {annEditorOpen && (
-          <AnnotationEditor
-            imageUrl={pendingPreview || image.imagePreviewUrl}
-            initialAnnotations={annotations}
-            onSave={function(anns){ setAnnotations(anns); setAnnEditorOpen(false); }}
-            onCancel={function(){ setAnnEditorOpen(false); }}
-          />
-        )}
         </div>
       );
     }
