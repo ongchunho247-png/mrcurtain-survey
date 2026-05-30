@@ -1292,3 +1292,36 @@ are terminated then try again. If it still fails, a git process
 may have crashed in this repository earlier:
 remove the file manually to continue.
 ============================================================
+
+────────────────────────────────────────────────────────────
+[07:06:58 30/5/2026] DEPLOY THANH CONG
+Commit  : P25c: Fix white-space pre-wrap for image notes in thumbnail cards
+Branch  : main
+Hash    : 054b687 P25c: Fix white-space pre-wrap for image notes in thumbnail cards
+Remote  : https://github.com/ongchunho247-png/mrcurtain-survey.git
+Netlify : tu deploy tu branch main (~30 giay)
+────────────────────────────────────────────────────────────
+
+============================================================
+[07:07:10 30/5/2026] LỖI DEPLOY
+Ly do : git add that bai
+error         : fatal: Unable to create '/sessions/pensive-bold-bardeen/mnt/web app mobile khao sat/.git/index.lock': File exists.
+
+Another git process seems to be running in this repository, e.g.
+an editor opened by 'git commit'. Please make sure all processes
+are terminated then try again. If it still fails, a git process
+may have crashed in this repository earlier:
+remove the file manually to continue.
+============================================================
+
+============================================================
+[07:14:20 30/5/2026] LỖI DEPLOY
+Ly do : git add that bai
+error         : fatal: Unable to create '/sessions/pensive-bold-bardeen/mnt/web app mobile khao sat/.git/index.lock': File exists.
+
+Another git process seems to be running in this repository, e.g.
+an editor opened by 'git commit'. Please make sure all processes
+are terminated then try again. If it still fails, a git process
+may have crashed in this repository earlier:
+remove the file manually to continue.
+============================================================

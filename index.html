@@ -1077,7 +1077,6 @@
     .thumb-notes-text {
       font-size: 10px; color: var(--text-secondary);
       word-break: break-word; line-height: 1.4;
-      white-space: pre-wrap;
       overflow: hidden;
       display: -webkit-box;
       -webkit-line-clamp: 3;
@@ -1567,7 +1566,7 @@
     // =============================================
     // STORAGE UTILS
     // =============================================
-    const APP_PROMPT_VERSION = 'P25c'; // Cập nhật khi lên version mới
+    const APP_PROMPT_VERSION = 'P26'; // Cập nhật khi lên version mới
     const STORAGE_KEY = 'mrcurtain_survey_projects';
     const STORAGE_KEY_LEGACY = 'mrcurtain_projects'; // key cũ từ Prompt 2
     // Khai báo sớm để runDataMigration() dùng được (Prompt 14.2)
@@ -2918,6 +2917,10 @@
       return String(s == null ? '' : s)
         .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
+    function joinLines(str) {
+      if (!str) return '';
+      return str.split('\n').map(function(s){return s.trim();}).filter(Boolean).join(' • ');
+    }
     /* Backward compat: ưu tiên mảng mới, fallback field cũ */
     function getPositionDisplay(img) {
       if (Array.isArray(img.positions) && img.positions.length > 0) return img.positions.join(' - ');
@@ -2961,7 +2964,7 @@
         var spec  = (Array.isArray(img.productSpecs)&&img.productSpecs.length)?img.productSpecs.join(' | '):(img.productSpec||'Chua co');
         var size  = (img.width&&img.height)?(img.width+' x '+img.height+' '+(img.unit||'mm')):'Chua co';
         var tags  = (Array.isArray(img.tags)&&img.tags.length)?img.tags.join(' | '):'Khong co';
-        var note  = img.notes||'Khong co';
+        var note  = joinLines(img.notes)||'Khong co';
         var rows  = [['Tinh trang',sLbl],['Vi tri',pos],['Loai rem',curtain],
                      ['Quy cach SP',spec],['Kich thuoc',size],['Luu y',tags],['Ghi chu',note]];
 
@@ -3093,7 +3096,7 @@
         : 'Không có';
 
       /* Ghi chú */
-      const note = img.notes || 'Không có';
+      const note = joinLines(img.notes) || 'Không có';
 
       /* Bảng thông tin — label cột cố định 110px */
       function row(label, value) {
@@ -4339,7 +4342,7 @@
 
             {/* Dòng 6: ghi chú (chỉ hiện nếu có) */}
             {img.notes && (
-              <span className="thumb-notes-text">{img.notes}</span>
+              <span className="thumb-notes-text">{joinLines(img.notes)}</span>
             )}
 
             {/* Dòng 7: ngày */}
@@ -5608,7 +5611,7 @@
                         
                         <div className="info-row-body">
                           <div className="info-row-label">Địa chỉ</div>
-                          <div className={`info-row-value${!project.address ? ' empty' : ''}`} style={{whiteSpace:'pre-wrap'}}>
+                          <div className={`info-row-value${!project.address ? ' empty' : ''}`}>
                             {project.address || 'Chưa nhập'}
                           </div>
                         </div>
@@ -5655,8 +5658,8 @@
                           <div className="info-row">
                             
                             <div className="info-row-body">
-                              <div className="info-row-value" style={{whiteSpace:'pre-wrap', fontStyle:'italic'}}>
-                                {project.generalNote}
+                              <div className="info-row-value" style={{fontStyle:'italic'}}>
+                                {joinLines(project.generalNote)}
                               </div>
                             </div>
                           </div>
