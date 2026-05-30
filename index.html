@@ -1585,7 +1585,7 @@
     // =============================================
     // STORAGE UTILS
     // =============================================
-    const APP_PROMPT_VERSION = 'P28'; // Cập nhật khi lên version mới
+    const APP_PROMPT_VERSION = 'P29'; // Cập nhật khi lên version mới
     const STORAGE_KEY = 'mrcurtain_survey_projects';
     const STORAGE_KEY_LEGACY = 'mrcurtain_projects'; // key cũ từ Prompt 2
     // Khai báo sớm để runDataMigration() dùng được (Prompt 14.2)
@@ -3880,12 +3880,16 @@
     };
 
 
-    /* ── Annotation helpers (P28) ── */
+    /* ── Annotation helpers (P29) ── */
     function annArrowPts(x1,y1,x2,y2,s) {
       var dx=x2-x1,dy=y2-y1,len=Math.sqrt(dx*dx+dy*dy);
       if(len<0.001) return '';
       var ux=dx/len,uy=dy/len,px=-uy,py=ux,ss=s*0.45;
       return x2+','+y2+' '+(x2-ux*s+px*ss)+','+(y2-uy*s+py*ss)+' '+(x2-ux*s-px*ss)+','+(y2-uy*s-py*ss);
+    }
+    function annVec(x1,y1,x2,y2){
+      var dx=x2-x1,dy=y2-y1,len=Math.sqrt(dx*dx+dy*dy);
+      return len<0.001?{ux:0,uy:0,len:0}:{ux:dx/len,uy:dy/len,len:len};
     }
     function drawCanvasArrowHead(ctx,x1,y1,x2,y2,size) {
       var dx=x2-x1,dy=y2-y1,len=Math.sqrt(dx*dx+dy*dy);
@@ -3897,29 +3901,31 @@
       ctx.lineTo(x2-ux*size-px*ss,y2-uy*size-py*ss);
       ctx.closePath(); ctx.fill();
     }
-    function ptLineDist(px,py,x1,y1,x2,y2) {
+    function ptLineDist(px,py,x1,y1,x2,y2){
       var dx=x2-x1,dy=y2-y1,len2=dx*dx+dy*dy;
       if(len2<0.001) return Math.sqrt((px-x1)*(px-x1)+(py-y1)*(py-y1));
       var t=Math.max(0,Math.min(1,((px-x1)*dx+(py-y1)*dy)/len2));
-      var nx=x1+t*dx-px, ny=y1+t*dy-py;
-      return Math.sqrt(nx*nx+ny*ny);
+      return Math.sqrt((px-x1-t*dx)*(px-x1-t*dx)+(py-y1-t*dy)*(py-y1-t*dy));
     }
 
     function AnnotationEditor({ imageUrl, initialAnnotations, onSave, onCancel }) {
-      const [anns, setAnns]     = useState(initialAnnotations || []);
-      const [tool, setTool]     = useState('arrow');
-      const [drawStart, setDS]  = useState(null);
-      const [drawCur,   setDC]  = useState(null);
-      const [selId, setSelId]   = useState(null);
-      const [dragId, setDragId] = useState(null);
-      const [inlinePos, setIP]  = useState(null); // {x,y,sx,sy} — inline text input
-      const [inlineVal, setIV]  = useState('');
-      const svgRef      = React.useRef(null);
-      const dragRef     = React.useRef(null); // {startPt, startAnn}
-      const inlineRef   = React.useRef(null);
+      const [anns, setAnns]       = useState(initialAnnotations || []);
+      const [tool, setTool]       = useState('arrow');
+      const [drawStart, setDS]    = useState(null);
+      const [drawCur,   setDC]    = useState(null);
+      const [selId, setSelId]     = useState(null);
+      const [dragId, setDragId]   = useState(null);
+      const [inlinePos, setIP]    = useState(null); // {x,y,sx,sy}
+      const [inlineVal, setIV]    = useState('');
+      const [editingId, setEId]   = useState(null); // id của text đang edit
+      const svgRef    = React.useRef(null);
+      const dragRef   = React.useRef(null);
+      const inlineRef = React.useRef(null);
+      const annsRef   = React.useRef(anns);
+      annsRef.current = anns;
 
       function toPct(e) {
-        var svg=svgRef.current; if(!svg) return {x:0,y:0};
+        var svg=svgRef.current; if(!svg) return {x:0,y:0,sx:0,sy:0};
         var r=svg.getBoundingClientRect();
         var s=e.touches?e.touches[0]:(e.changedTouches?e.changedTouches[0]:e);
         return {
@@ -3928,40 +3934,68 @@
           sx:s.clientX, sy:s.clientY,
         };
       }
-      function hitTest(pt) {
-        for (var i=anns.length-1;i>=0;i--) {
-          var a=anns[i];
-          if(a.type==='text' && Math.abs(pt.x-a.x)<14 && Math.abs(pt.y-a.y)<8) return a.id;
-          if(a.type==='arrow' && ptLineDist(pt.x,pt.y,a.x1,a.y1,a.x2,a.y2)<5) return a.id;
+      function annToScreen(ax,ay){
+        var svg=svgRef.current; if(!svg) return {sx:0,sy:0};
+        var r=svg.getBoundingClientRect();
+        return {sx:r.left+ax/100*r.width, sy:r.top+ay/100*r.height};
+      }
+      function hitTest(pt){
+        for(var i=annsRef.current.length-1;i>=0;i--){
+          var a=annsRef.current[i];
+          if(a.type==='text'&&Math.abs(pt.x-a.x)<14&&Math.abs(pt.y-a.y)<5) return a.id;
+          if(a.type==='arrow'&&ptLineDist(pt.x,pt.y,a.x1,a.y1,a.x2,a.y2)<5) return a.id;
         }
         return null;
       }
-      function onDown(e) {
+      function openInline(pos,val,editId){
+        setIP(pos); setIV(val||''); setEId(editId||null);
+        setTimeout(function(){
+          if(inlineRef.current){inlineRef.current.focus();inlineRef.current.select();}
+        },30);
+      }
+      function confirmText(){
+        var val=inlineVal.trim();
+        if(!inlinePos){return;}
+        if(val){
+          if(editingId){
+            setAnns(function(p){return p.map(function(a){return a.id===editingId?{...a,text:val}:a;});});
+          } else {
+            var id=Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+            setAnns(function(p){return p.concat([{id,type:'text',x:inlinePos.x,y:inlinePos.y,text:val}]);});
+          }
+        }
+        setIP(null);setIV('');setEId(null);
+      }
+      function onDown(e){
         e.preventDefault();
         var pt=toPct(e);
+        if(inlinePos){confirmText();return;}
         var hit=hitTest(pt);
-        if (hit) {
-          setSelId(hit); setDragId(hit);
-          var ann=anns.find(function(a){return a.id===hit;});
-          dragRef.current={startPt:pt, startAnn:{...ann}};
+        if(hit){
+          var ann=annsRef.current.find(function(a){return a.id===hit;});
+          setSelId(hit);
+          if(ann&&ann.type==='text'){
+            var sc=annToScreen(ann.x,ann.y);
+            openInline({x:ann.x,y:ann.y,sx:sc.sx,sy:sc.sy},ann.text,hit);
+          } else {
+            setDragId(hit);
+            dragRef.current={startPt:pt,startAnn:{...ann}};
+          }
           return;
         }
         setSelId(null);
         if(tool==='arrow'){setDS(pt);setDC(pt);}
         else if(tool==='text'){
-          var svg=svgRef.current; if(!svg) return;
-          var r=svg.getBoundingClientRect();
-          setIP({x:pt.x,y:pt.y,sx:pt.sx,sy:pt.sy}); setIV('');
-          setTimeout(function(){inlineRef.current&&inlineRef.current.focus();},30);
+          openInline({x:pt.x,y:pt.y,sx:pt.sx,sy:pt.sy},'',null);
         }
       }
-      function onMove(e) {
+      function onMove(e){
         e.preventDefault();
-        var pt=toPct(e);
-        if(dragId&&dragRef.current) {
-          var dx=pt.x-dragRef.current.startPt.x, dy=pt.y-dragRef.current.startPt.y;
+        if(dragId&&dragRef.current){
+          var pt=toPct(e);
+          var dx=pt.x-dragRef.current.startPt.x,dy=pt.y-dragRef.current.startPt.y;
           var sa=dragRef.current.startAnn;
-          setAnns(function(prev){return prev.map(function(a){
+          setAnns(function(p){return p.map(function(a){
             if(a.id!==dragId) return a;
             if(a.type==='arrow') return {...a,x1:sa.x1+dx,y1:sa.y1+dy,x2:sa.x2+dx,y2:sa.y2+dy};
             if(a.type==='text')  return {...a,x:sa.x+dx,y:sa.y+dy};
@@ -3970,9 +4004,9 @@
           return;
         }
         if(!drawStart) return;
-        setDC(pt);
+        setDC(toPct(e));
       }
-      function onUp(e) {
+      function onUp(e){
         e.preventDefault();
         if(dragId){setDragId(null);dragRef.current=null;return;}
         if(!drawStart) return;
@@ -3980,20 +4014,14 @@
         var dx=pt.x-drawStart.x,dy=pt.y-drawStart.y;
         if(Math.sqrt(dx*dx+dy*dy)>2){
           var id=Date.now().toString(36)+Math.random().toString(36).slice(2,5);
-          setAnns(function(prev){return prev.concat([{id,type:'arrow',x1:drawStart.x,y1:drawStart.y,x2:pt.x,y2:pt.y,twoHeads:true}]);});
+          setAnns(function(p){return p.concat([{id,type:'arrow',x1:drawStart.x,y1:drawStart.y,x2:pt.x,y2:pt.y,twoHeads:true}]);});
         }
         setDS(null);setDC(null);
-      }
-      function confirmText() {
-        if(!inlinePos||!inlineVal.trim()){setIP(null);return;}
-        var id=Date.now().toString(36)+Math.random().toString(36).slice(2,5);
-        setAnns(function(prev){return prev.concat([{id,type:'text',x:inlinePos.x,y:inlinePos.y,text:inlineVal.trim()}]);});
-        setIP(null);setIV('');
       }
       function toggleHeads(){setAnns(function(p){return p.map(function(a){return a.id===selId?{...a,twoHeads:!a.twoHeads}:a;});});}
       function delSel(){setAnns(function(p){return p.filter(function(a){return a.id!==selId;});});setSelId(null);}
       var selAnn_=anns.find(function(a){return a.id===selId;});
-      const S=2.5;
+      const S=2.0; // arrowhead size — nhỏ gọn
       return (
         <div className="ann-editor-overlay">
           <div className="ann-editor-img-wrap">
@@ -4002,78 +4030,109 @@
               onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp}
             >
               {anns.map(function(ann){
-                var sel=ann.id===selId;
+                var sel=ann.id===selId&&!editingId;
                 var clr=sel?'#ff8800':'#ef4444';
                 if(ann.type==='arrow'){
+                  var v=annVec(ann.x1,ann.y1,ann.x2,ann.y2);
+                  if(v.len<0.001) return null;
+                  // Shorten line to not overlap arrowheads
+                  var lx1=ann.x1+(ann.twoHeads?v.ux*S:0);
+                  var ly1=ann.y1+(ann.twoHeads?v.uy*S:0);
+                  var lx2=ann.x2-v.ux*S;
+                  var ly2=ann.y2-v.uy*S;
                   var p2=annArrowPts(ann.x1,ann.y1,ann.x2,ann.y2,S);
                   var p1=ann.twoHeads?annArrowPts(ann.x2,ann.y2,ann.x1,ann.y1,S):null;
                   return (<g key={ann.id} style={{cursor:'grab'}}>
-                    <line x1={ann.x1} y1={ann.y1} x2={ann.x2} y2={ann.y2} stroke={clr} strokeWidth="0.8"/>
+                    <line x1={lx1} y1={ly1} x2={lx2} y2={ly2} stroke={clr} strokeWidth="0.5"/>
                     <polygon points={p2} fill={clr}/>
                     {p1&&<polygon points={p1} fill={clr}/>}
-                    <line x1={ann.x1} y1={ann.y1} x2={ann.x2} y2={ann.y2} stroke="transparent" strokeWidth="4"/>
+                    <line x1={ann.x1} y1={ann.y1} x2={ann.x2} y2={ann.y2} stroke="transparent" strokeWidth="5"/>
                   </g>);
                 }
                 if(ann.type==='text'){
-                  var tw=ann.text.length*2.5+3;
-                  return (<g key={ann.id} style={{cursor:'grab'}}>
-                    <rect x={ann.x-1} y={ann.y-4.5} width={tw} height={6} rx="1.5" ry="1.5"
-                      fill="rgba(60,60,60,0.8)"/>
-                    <text x={ann.x} y={ann.y} fontSize="3.8" fontWeight="bold" fontFamily="Arial" fill={clr}>
+                  if(ann.id===editingId) return null; // đang edit — ẩn, hiện inline input
+                  var tw=ann.text.length*2.4+4; var bh=5.5;
+                  var cx=ann.x+tw/2;
+                  return (<g key={ann.id} style={{cursor:'pointer'}}>
+                    <rect x={ann.x} y={ann.y-bh/2} width={tw} height={bh} rx="1.5" ry="1.5"
+                      fill={sel?'rgba(255,136,0,0.75)':'rgba(50,50,50,0.82)'}/>
+                    <text x={cx} y={ann.y} textAnchor="middle" dominantBaseline="central"
+                      fontSize="3.5" fontWeight="bold" fontFamily="Arial" fill={sel?'#fff':'#ef4444'}>
                       {ann.text}
                     </text>
-                    <rect x={ann.x-1} y={ann.y-4.5} width={tw} height={6} fill="transparent"/>
+                    <rect x={ann.x} y={ann.y-bh/2} width={tw} height={bh} fill="transparent"/>
                   </g>);
                 }
                 return null;
               })}
               {drawStart&&drawCur&&<line x1={drawStart.x} y1={drawStart.y} x2={drawCur.x} y2={drawCur.y}
-                stroke="#ef4444" strokeWidth="0.8" strokeDasharray="2,1.5"/>}
+                stroke="#ef4444" strokeWidth="0.5" strokeDasharray="2,1.5"/>}
             </svg>
             {inlinePos&&(
               <div style={{
                 position:'fixed',left:inlinePos.sx,top:inlinePos.sy,
-                transform:'translate(-50%,-120%)',zIndex:400,
+                transform:'translate(-50%,-130%)',zIndex:400,
+                pointerEvents:'auto',
               }}>
                 <input ref={inlineRef} value={inlineVal}
                   onChange={function(e){setIV(e.target.value);}}
-                  onKeyDown={function(e){if(e.key==='Enter')confirmText();if(e.key==='Escape')setIP(null);}}
+                  onKeyDown={function(e){
+                    if(e.key==='Enter'){e.preventDefault();confirmText();}
+                    if(e.key==='Escape'){setIP(null);setIV('');setEId(null);}
+                  }}
                   onBlur={confirmText}
                   style={{
-                    background:'rgba(30,30,30,0.92)',color:'#ef4444',
-                    border:'1.5px solid #ef4444',borderRadius:8,
-                    padding:'6px 12px',fontSize:16,fontFamily:'Arial',
-                    fontWeight:'bold',outline:'none',minWidth:100,textAlign:'center',
+                    background:'rgba(20,20,20,0.92)',color:'#ef4444',
+                    border:'1.5px solid rgba(239,68,68,0.6)',borderRadius:8,
+                    padding:'6px 14px',fontSize:17,fontFamily:'Arial',
+                    fontWeight:'bold',outline:'none',minWidth:90,textAlign:'center',
+                    boxShadow:'0 2px 12px rgba(0,0,0,0.5)',
                   }}
-                  placeholder="nhập số đo..."
+                  placeholder="..."
                 />
               </div>
             )}
           </div>
 
-          {/* Toolbar — dùng style chuẩn của app */}
+          {/* Toolbar */}
           <div style={{
             background:'var(--bg-card)',borderTop:'1px solid var(--border)',
-            padding:'10px 12px',display:'flex',gap:8,flexWrap:'wrap',
+            padding:'10px 12px',display:'flex',gap:8,flexWrap:'wrap',alignItems:'center',
           }}>
-            <div style={{color:'var(--text-secondary)',fontSize:12,width:'100%',marginBottom:2}}>
+            <div style={{color:'var(--text-secondary)',fontSize:11,width:'100%',marginBottom:2,lineHeight:1.3}}>
               {dragId?'Đang di chuyển...':
-               tool==='arrow'?'Kéo vẽ mũi tên • Kéo đối tượng để di chuyển':
-               tool==='text'?'Bấm ảnh để đặt chữ số • Kéo để di chuyển':
-               selAnn_?'Đã chọn — dùng các nút bên dưới':'Bấm vào chú thích để chọn'}
+               inlinePos?'Nhập xong → Enter hoặc bấm ra ngoài':
+               tool==='arrow'?'Kéo để vẽ • Kéo đối tượng để di chuyển • Bấm để chọn':
+               'Bấm vào ảnh để đặt chữ số • Bấm chữ để chỉnh sửa'}
             </div>
-            <button className={'btn btn-secondary'+(tool==='arrow'?' btn-primary':'')} style={{flex:1}}
-              onClick={function(){setTool('arrow');setSelId(null);}}>↔ Mũi tên</button>
-            <button className={'btn btn-secondary'+(tool==='text'?' btn-primary':'')} style={{flex:1}}
-              onClick={function(){setTool('text');setSelId(null);}}>T Chữ số</button>
+            {/* Tool buttons */}
+            <button
+              style={{
+                flex:1,padding:'9px 0',borderRadius:8,border:'1.5px solid var(--border)',
+                background:tool==='arrow'?'var(--primary)':'var(--bg-card)',
+                color:tool==='arrow'?'#fff':'var(--text)',
+                fontSize:18,cursor:'pointer',lineHeight:1,
+              }}
+              onClick={function(){setTool('arrow');setSelId(null);}}>
+              ↔
+            </button>
+            <button
+              style={{
+                flex:1,padding:'9px 0',borderRadius:8,border:'1.5px solid var(--border)',
+                background:tool==='text'?'var(--primary)':'var(--bg-card)',
+                color:tool==='text'?'#fff':'var(--text)',
+                fontSize:16,fontWeight:'bold',fontFamily:'Arial',cursor:'pointer',lineHeight:1,
+              }}
+              onClick={function(){setTool('text');setSelId(null);}}>
+              T<sup style={{fontSize:'0.6em',fontWeight:'bold'}}>+</sup>
+            </button>
             {selAnn_&&selAnn_.type==='arrow'&&(
-              <button className="btn btn-secondary" style={{flex:1}} onClick={toggleHeads}>
+              <button className="btn btn-secondary" style={{flex:1.5}} onClick={toggleHeads}>
                 {selAnn_.twoHeads?'→ 1 đầu':'↔ 2 đầu'}
               </button>
             )}
-            {selId&&<button className="btn btn-secondary" style={{flex:1,color:'var(--danger)'}} onClick={delSel}>🗑 Xóa</button>}
-            <button className="btn btn-primary" style={{flex:1}} onClick={function(){onSave(anns);}}>✔ Lưu</button>
-            <button className="btn btn-secondary" style={{flex:1}} onClick={onCancel}>✕ Hủy</button>
+            {selId&&<button className="btn btn-secondary" style={{flex:1,color:'var(--danger)'}} onClick={delSel}>🗑</button>}
+            <button className="btn btn-primary" style={{flex:2}} onClick={function(){onSave(anns);}}>← Xong</button>
           </div>
         </div>
       );
