@@ -1077,9 +1077,10 @@
     .thumb-notes-text {
       font-size: 10px; color: var(--text-secondary);
       word-break: break-word; line-height: 1.4;
+      white-space: pre-wrap;
       overflow: hidden;
       display: -webkit-box;
-      -webkit-line-clamp: 2;
+      -webkit-line-clamp: 3;
       -webkit-box-orient: vertical;
     }
 
@@ -1566,7 +1567,7 @@
     // =============================================
     // STORAGE UTILS
     // =============================================
-    const APP_PROMPT_VERSION = 'P25b'; // Cập nhật khi lên version mới
+    const APP_PROMPT_VERSION = 'P25c'; // Cập nhật khi lên version mới
     const STORAGE_KEY = 'mrcurtain_survey_projects';
     const STORAGE_KEY_LEGACY = 'mrcurtain_projects'; // key cũ từ Prompt 2
     // Khai báo sớm để runDataMigration() dùng được (Prompt 14.2)
@@ -6426,11 +6427,11 @@
       // Mặc định: màn hình danh sách công trình
       return (
         <ProjectList
-          onCreateNew={() => goTo('create')}
-          onSelectProject={projId => goTo('detail', projId)}
-          onOpenTagManager={() => goTo('tag-manager')}
-          onOpenSettings={() => goTo('settings')}
-          onOpenTrash={() => goTo('trash')}
+          onCreateNew={() => goTo("create")}
+          onSelectProject={projId => goTo("detail", projId)}
+          onOpenTagManager={() => goTo("tag-manager")}
+          onOpenSettings={() => goTo("settings")}
+          onOpenTrash={() => goTo("trash")}
         />
       );
     }
