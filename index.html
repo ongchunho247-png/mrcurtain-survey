@@ -976,7 +976,7 @@
 
     /* ===== IMAGE DETAIL SCREEN (Prompt 6) ===== */
     /* ── Annotation Editor (P27) ── */
-    .ann-editor-overlay { position:fixed; inset:0; z-index:300; background:#000; display:flex; flex-direction:column; }
+    .ann-editor-overlay { position:fixed; inset:0; z-index:300; background:#000; display:flex; flex-direction:column; touch-action:none; overscroll-behavior:none; }
     .ann-editor-img-wrap { flex:1; position:relative; overflow:hidden; display:flex; align-items:center; justify-content:center; }
     .ann-editor-img { max-width:100%; max-height:100%; object-fit:contain; display:block; -webkit-user-select:none; user-select:none; pointer-events:none; }
     .ann-svg-overlay { position:absolute; inset:0; width:100%; height:100%; touch-action:none; }
@@ -1585,7 +1585,7 @@
     // =============================================
     // STORAGE UTILS
     // =============================================
-    const APP_PROMPT_VERSION = 'P30'; // Cập nhật khi lên version mới
+    const APP_PROMPT_VERSION = 'P31'; // Cập nhật khi lên version mới
     const STORAGE_KEY = 'mrcurtain_survey_projects';
     const STORAGE_KEY_LEGACY = 'mrcurtain_projects'; // key cũ từ Prompt 2
     // Khai báo sớm để runDataMigration() dùng được (Prompt 14.2)
@@ -3926,7 +3926,15 @@
       const dragRef     = React.useRef(null);
       const inlineRef   = React.useRef(null);
       const annsRef     = React.useRef(anns); annsRef.current = anns;
-      const lastTapRef  = React.useRef({time:0,id:null}); // double-tap tracking
+      const lastTapRef  = React.useRef({time:0,id:null});
+      // Prevent browser swipe-back during annotation drag
+      React.useEffect(function(){
+        var el = svgRef.current; if(!el) return;
+        function noScroll(e){ e.preventDefault(); }
+        el.addEventListener("touchstart", noScroll, {passive:false});
+        el.addEventListener("touchmove",  noScroll, {passive:false});
+        return function(){ el.removeEventListener("touchstart",noScroll); el.removeEventListener("touchmove",noScroll); };
+      }, []); // double-tap tracking
 
       function toPct(e) {
         var svg=svgRef.current; if(!svg) return {x:0,y:0,sx:0,sy:0};
@@ -4189,6 +4197,10 @@
       const replaceInputRef = React.useRef(null);
       const [annotations, setAnnotations] = useState([]);
       const [annEditorOpen, setAnnEditorOpen] = useState(false);
+      const [collSections, setCollSections]   = useState(new Set());
+      function toggleColl(name){ setCollSections(function(prev){
+        var s=new Set(prev); s.has(name)?s.delete(name):s.add(name); return s;
+      }); }
 
       // Load ảnh + điền sẵn form
       useEffect(() => {
@@ -4393,21 +4405,30 @@
             )}
             {annotations.length > 0 && (
               <svg className="ann-readonly-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
-                {annotations.map(ann=>{
+                {annotations.map(function(ann){
+                  const RS=2.0;
                   if (ann.type==='arrow') {
-                    const p2=annArrowPts(ann.x1,ann.y1,ann.x2,ann.y2,4);
-                    const p1=ann.twoHeads?annArrowPts(ann.x2,ann.y2,ann.x1,ann.y1,4):null;
+                    const v=annVec(ann.x1,ann.y1,ann.x2,ann.y2);
+                    if(v.len<0.001) return null;
+                    const lx1=ann.x1+(ann.twoHeads?v.ux*RS:0), ly1=ann.y1+(ann.twoHeads?v.uy*RS:0);
+                    const lx2=ann.x2-v.ux*RS, ly2=ann.y2-v.uy*RS;
+                    const p2=annArrowPts(ann.x1,ann.y1,ann.x2,ann.y2,RS);
+                    const p1=ann.twoHeads?annArrowPts(ann.x2,ann.y2,ann.x1,ann.y1,RS):null;
                     return (<g key={ann.id}>
-                      <line x1={ann.x1} y1={ann.y1} x2={ann.x2} y2={ann.y2} stroke="#ef4444" strokeWidth="1.5"/>
+                      <line x1={lx1} y1={ly1} x2={lx2} y2={ly2} stroke="#ef4444" strokeWidth="0.5"/>
                       <polygon points={p2} fill="#ef4444"/>
                       {p1&&<polygon points={p1} fill="#ef4444"/>}
                     </g>);
                   }
                   if (ann.type==='text') {
-                    return (<text key={ann.id} x={ann.x} y={ann.y} fontSize="4" fontWeight="bold" fontFamily="Arial"
-                      stroke="rgba(0,0,0,0.75)" strokeWidth="0.5" paintOrder="stroke" fill="#ef4444">
-                      {ann.text}
-                    </text>);
+                    const tw=ann.text.length*2.4+4, bh=5.5, cx=ann.x+tw/2;
+                    return (<g key={ann.id}>
+                      <rect x={ann.x} y={ann.y-bh/2} width={tw} height={bh} rx="1.5" ry="1.5" fill="rgba(50,50,50,0.82)"/>
+                      <text x={cx} y={ann.y} textAnchor="middle" dominantBaseline="central"
+                        fontSize="3.5" fontWeight="bold" fontFamily="Arial" fill="#ef4444">
+                        {ann.text}
+                      </text>
+                    </g>);
                   }
                   return null;
                 })}
@@ -4475,8 +4496,12 @@
 
             {/* ── Vị trí (ordered multi-select) ── */}
             <div className="idf-section">
-              <div className="idf-section-title">Vị trí <span className="idf-hint">Chọn nhiều, theo thứ tự</span></div>
-              <div className="chip-group">
+              <div className="idf-section-title" style={{display:'flex',alignItems:'center',justifyContent:'space-between',cursor:'pointer'}}
+                onClick={()=>toggleColl('viTri')}>
+                <span>Vị trí <span className="idf-hint">Chọn nhiều, theo thứ tự</span></span>
+                <span style={{fontSize:11,color:'var(--text-secondary)'}}>{collSections.has('viTri')?'▶ Mở':'▼ Thu'}</span>
+              </div>
+              {!collSections.has('viTri') && <div className="chip-group">
                 <div className="chips-wrap">
                   {getTagsByGroup('position').map(tag => {
                     const idx = form.positions.indexOf(tag.tagName);
@@ -4494,13 +4519,17 @@
                     );
                   })}
                 </div>
-              </div>
+              </div>}
             </div>
 
             {/* ── Loại rèm (ordered multi-select) ── */}
             <div className="idf-section">
-              <div className="idf-section-title">Loại rèm <span className="idf-hint">Chọn nhiều, theo thứ tự</span></div>
-              <div className="chip-group">
+              <div className="idf-section-title" style={{display:'flex',alignItems:'center',justifyContent:'space-between',cursor:'pointer'}}
+                onClick={()=>toggleColl('loaiRem')}>
+                <span>Loại rèm <span className="idf-hint">Chọn nhiều, theo thứ tự</span></span>
+                <span style={{fontSize:11,color:'var(--text-secondary)'}}>{collSections.has('loaiRem')?'▶ Mở':'▼ Thu'}</span>
+              </div>
+              {!collSections.has('loaiRem') && <div className="chip-group">
                 <div className="chips-wrap">
                   {getTagsByGroup('curtainType').map(tag => {
                     const idx = form.curtainTypes.indexOf(tag.tagName);
@@ -4518,13 +4547,17 @@
                     );
                   })}
                 </div>
-              </div>
+              </div>}
             </div>
 
             {/* ── Quy cách sản phẩm (ordered multi-select) ── */}
             <div className="idf-section">
-              <div className="idf-section-title">Quy cách sản phẩm <span className="idf-hint">Chọn nhiều, theo thứ tự</span></div>
-              <div className="chip-group">
+              <div className="idf-section-title" style={{display:'flex',alignItems:'center',justifyContent:'space-between',cursor:'pointer'}}
+                onClick={()=>toggleColl('quyCach')}>
+                <span>Quy cách sản phẩm <span className="idf-hint">Chọn nhiều, theo thứ tự</span></span>
+                <span style={{fontSize:11,color:'var(--text-secondary)'}}>{collSections.has('quyCach')?'▶ Mở':'▼ Thu'}</span>
+              </div>
+              {!collSections.has('quyCach') && <div className="chip-group">
                 <div className="chips-wrap">
                   {getTagsByGroup('productSpec').map(tag => {
                     const idx = form.productSpecs.indexOf(tag.tagName);
@@ -4542,14 +4575,18 @@
                     );
                   })}
                 </div>
-              </div>
+              </div>}
             </div>
 
             {/* ── Lưu ý (ordered multi-select) ── */}
             {HASHTAG_GROUPS.filter(g => g.multi).map(group => (
               <div key={group.id} className="idf-section">
-                <div className="idf-section-title">⚠️ {group.label} <span className="idf-hint">Chọn nhiều, theo thứ tự</span></div>
-                <div className="chip-group">
+                <div className="idf-section-title" style={{display:'flex',alignItems:'center',justifyContent:'space-between',cursor:'pointer'}}
+                  onClick={()=>toggleColl('luuY_'+group.id)}>
+                  <span>⚠️ {group.label} <span className="idf-hint">Chọn nhiều, theo thứ tự</span></span>
+                  <span style={{fontSize:11,color:'var(--text-secondary)'}}>{collSections.has('luuY_'+group.id)?'▶ Mở':'▼ Thu'}</span>
+                </div>
+                {!collSections.has('luuY_'+group.id) && <div className="chip-group">
                   <div className="chips-wrap">
                     {getTagsByGroup(group.id).map(tag => {
                       const idx = form.tags.indexOf(tag.tagName);
@@ -4567,7 +4604,7 @@
                       );
                     })}
                   </div>
-                </div>
+                </div>}
               </div>
             ))}
 
