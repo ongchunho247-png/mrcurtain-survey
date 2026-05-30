@@ -975,7 +975,26 @@
     }
 
     /* ===== IMAGE DETAIL SCREEN (Prompt 6) ===== */
-    .image-detail-preview-wrap {
+    /* ── Annotation Editor (P27) ── */
+    .ann-editor-overlay { position:fixed; inset:0; z-index:300; background:#000; display:flex; flex-direction:column; }
+    .ann-editor-img-wrap { flex:1; position:relative; overflow:hidden; display:flex; align-items:center; justify-content:center; }
+    .ann-editor-img { max-width:100%; max-height:100%; object-fit:contain; display:block; -webkit-user-select:none; user-select:none; pointer-events:none; }
+    .ann-svg-overlay { position:absolute; inset:0; width:100%; height:100%; touch-action:none; }
+    .ann-toolbar { background:#1a1a1a; padding:10px 12px; display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+    .ann-tool-btn { padding:9px 10px; border-radius:8px; border:1.5px solid #444; background:#2a2a2a; color:#fff; font-size:13px; font-weight:600; cursor:pointer; flex:1; min-width:64px; text-align:center; }
+    .ann-tool-btn.active { background:#ef4444; border-color:#ef4444; }
+    .ann-tool-btn.save-btn { background:#22c55e; border-color:#22c55e; }
+    .ann-tool-btn.cancel-btn { background:#333; border-color:#555; }
+    .ann-tool-btn.del-btn { background:#ef4444; border-color:#ef4444; }
+    .ann-tool-btn.head-btn { background:#7c3aed; border-color:#7c3aed; }
+    .ann-info-label { color:#888; font-size:12px; width:100%; padding:0 4px 4px; }
+    .ann-text-modal { position:absolute; bottom:0; left:0; right:0; background:#111; border-top:1px solid #333; padding:14px 16px; z-index:10; }
+    .ann-text-input { width:100%; padding:11px 12px; font-size:16px; background:#2a2a2a; color:#fff; border:1.5px solid #555; border-radius:8px; outline:none; margin-bottom:10px; box-sizing:border-box; }
+    .ann-text-buttons { display:flex; gap:8px; }
+    .btn-annotate { display:block; width:calc(100% - 0px); background:var(--bg-card); border:1.5px dashed #ef4444; color:#ef4444; font-size:14px; font-weight:700; padding:11px 0; border-radius:0; cursor:pointer; text-align:center; transition:background 0.15s; }
+    .btn-annotate:active { opacity:0.8; }
+    .ann-readonly-svg { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+        .image-detail-preview-wrap {
       background: #000;
       max-height: 260px;
       overflow: hidden;
@@ -1566,7 +1585,7 @@
     // =============================================
     // STORAGE UTILS
     // =============================================
-    const APP_PROMPT_VERSION = 'P26'; // Cập nhật khi lên version mới
+    const APP_PROMPT_VERSION = 'P27'; // Cập nhật khi lên version mới
     const STORAGE_KEY = 'mrcurtain_survey_projects';
     const STORAGE_KEY_LEGACY = 'mrcurtain_projects'; // key cũ từ Prompt 2
     // Khai báo sớm để runDataMigration() dùng được (Prompt 14.2)
@@ -3026,7 +3045,28 @@
 
             /* image */
             var ix=PAD+Math.round((maxIW-iW)/2);
-            ctx.drawImage(domImg,ix,y,iW,iH); y+=iH+12;
+            ctx.drawImage(domImg,ix,y,iW,iH);
+            /* Draw annotations (P27) */
+            if (Array.isArray(img.annotations) && img.annotations.length>0) {
+              img.annotations.forEach(function(ann) {
+                if (ann.type==='arrow') {
+                  var ax1=ix+ann.x1/100*iW, ay1=y+ann.y1/100*iH;
+                  var ax2=ix+ann.x2/100*iW, ay2=y+ann.y2/100*iH;
+                  ctx.strokeStyle='#ef4444'; ctx.lineWidth=3;
+                  ctx.beginPath(); ctx.moveTo(ax1,ay1); ctx.lineTo(ax2,ay2); ctx.stroke();
+                  drawCanvasArrowHead(ctx,ax1,ay1,ax2,ay2,14);
+                  if (ann.twoHeads) drawCanvasArrowHead(ctx,ax2,ay2,ax1,ay1,14);
+                }
+                if (ann.type==='text') {
+                  var tx=ix+ann.x/100*iW, ty2=y+ann.y/100*iH;
+                  ctx.font='bold 18px Arial';
+                  ctx.strokeStyle='rgba(0,0,0,0.8)'; ctx.lineWidth=4; ctx.lineJoin='round';
+                  ctx.strokeText(ann.text,tx,ty2);
+                  ctx.fillStyle='#ef4444'; ctx.fillText(ann.text,tx,ty2);
+                }
+              });
+            }
+            y+=iH+12;
 
             /* table border */
             ctx.strokeStyle='#e5e7eb'; ctx.lineWidth=1;
@@ -3132,9 +3172,30 @@
           '<span style="font-size:16px;font-weight:400;color:#111827">Ảnh #' + stt + '</span>' +
           '<span style="padding:2px 10px;border-radius:12px;font-size:12px;font-weight:600;background:' + sBg + ';color:' + sClr + '">' + sLbl + '</span>' +
         '</div>' +
-        /* Ảnh gốc */
-        '<img src="' + (img.imagePreviewUrl || '') + '" ' +
-          'style="width:100%;max-height:220px;object-fit:contain;border-radius:6px;background:#f3f4f6;display:block;margin-bottom:12px" />' +
+        /* Ảnh gốc + annotation overlay (P27) */
+        (function(){
+          var annSvg='';
+          if(Array.isArray(img.annotations)&&img.annotations.length>0){
+            var svgParts=img.annotations.map(function(ann){
+              if(ann.type==='arrow'){
+                var dx=ann.x2-ann.x1,dy=ann.y2-ann.y1,len=Math.sqrt(dx*dx+dy*dy);
+                if(len<0.001)return '';
+                var ux=dx/len,uy=dy/len,px=-uy,py=ux,S=4,ss=S*0.45;
+                var p2=ann.x2+','+ann.y2+' '+(ann.x2-ux*S+px*ss)+','+(ann.y2-uy*S+py*ss)+' '+(ann.x2-ux*S-px*ss)+','+(ann.y2-uy*S-py*ss);
+                var p1=ann.twoHeads?('<polygon points="'+(ann.x1+','+ann.y1+' '+(ann.x1+ux*S+px*ss)+','+(ann.y1+uy*S+py*ss)+' '+(ann.x1+ux*S-px*ss)+','+(ann.y1+uy*S-py*ss))+'" fill="#ef4444"/>')  :'';
+                return '<line x1="'+ann.x1+'" y1="'+ann.y1+'" x2="'+ann.x2+'" y2="'+ann.y2+'" stroke="#ef4444" stroke-width="1.5"/>'
+                  +'<polygon points="'+p2+'" fill="#ef4444"/>'+p1;
+              }
+              if(ann.type==='text')return '<text x="'+ann.x+'" y="'+ann.y+'" font-size="4" font-weight="bold" font-family="Arial" stroke="rgba(0,0,0,0.75)" stroke-width="0.5" paint-order="stroke" fill="#ef4444">'+escapeHtml(ann.text)+'</text>';
+              return '';
+            }).join('');
+            annSvg='<svg style="position:absolute;inset:0;width:100%;height:100%;" viewBox="0 0 100 100" preserveAspectRatio="none">'+svgParts+'</svg>';
+          }
+          return '<div style="position:relative;margin-bottom:12px">'
+            +'<img src="'+(img.imagePreviewUrl||'')+'" '
+            +'style="width:100%;max-height:220px;object-fit:contain;border-radius:6px;background:#f3f4f6;display:block" />'
+            +annSvg+'</div>';
+        })() +
         /* Bảng thông tin */
         '<div style="border:1px solid #e5e7eb;border-radius:6px;padding:10px 12px">' +
           '<table style="width:100%;border-collapse:collapse;table-layout:fixed">' +
@@ -3818,6 +3879,144 @@
       notes: '', tags: [],
     };
 
+
+    /* ── Annotation helpers (P27) ── */
+    function annArrowPts(x1,y1,x2,y2,s) {
+      var dx=x2-x1,dy=y2-y1,len=Math.sqrt(dx*dx+dy*dy);
+      if(len<0.001) return '';
+      var ux=dx/len,uy=dy/len,px=-uy,py=ux,ss=s*0.45;
+      return x2+','+y2+' '+(x2-ux*s+px*ss)+','+(y2-uy*s+py*ss)+' '+(x2-ux*s-px*ss)+','+(y2-uy*s-py*ss);
+    }
+    function drawCanvasArrowHead(ctx,x1,y1,x2,y2,size) {
+      var dx=x2-x1,dy=y2-y1,len=Math.sqrt(dx*dx+dy*dy);
+      if(len<0.001) return;
+      var ux=dx/len,uy=dy/len,px=-uy,py=ux,ss=size*0.45;
+      ctx.fillStyle='#ef4444';
+      ctx.beginPath(); ctx.moveTo(x2,y2);
+      ctx.lineTo(x2-ux*size+px*ss,y2-uy*size+py*ss);
+      ctx.lineTo(x2-ux*size-px*ss,y2-uy*size-py*ss);
+      ctx.closePath(); ctx.fill();
+    }
+
+    function AnnotationEditor({ imageUrl, initialAnnotations, onSave, onCancel }) {
+      const [anns, setAnns]         = useState(initialAnnotations || []);
+      const [tool, setTool]         = useState('arrow');
+      const [drawStart, setDS]      = useState(null);
+      const [drawCur,   setDC]      = useState(null);
+      const [selId, setSelId]       = useState(null);
+      const [textPos, setTextPos]   = useState(null);
+      const [textVal, setTextVal]   = useState('');
+      const svgRef = React.useRef(null);
+
+      function toPct(e) {
+        const svg = svgRef.current; if (!svg) return {x:0,y:0};
+        const r = svg.getBoundingClientRect();
+        const s = e.touches ? e.touches[0] : (e.changedTouches ? e.changedTouches[0] : e);
+        return {
+          x: Math.max(0,Math.min(100,(s.clientX-r.left)/r.width*100)),
+          y: Math.max(0,Math.min(100,(s.clientY-r.top)/r.height*100)),
+        };
+      }
+      function onDown(e) {
+        e.preventDefault();
+        const pt = toPct(e);
+        if (tool==='arrow') { setDS(pt); setDC(pt); setSelId(null); }
+        else if (tool==='text') { setTextPos(pt); setTextVal(''); setSelId(null); }
+      }
+      function onMove(e) { e.preventDefault(); if (!drawStart) return; setDC(toPct(e)); }
+      function onUp(e) {
+        e.preventDefault(); if (!drawStart) return;
+        const pt = toPct(e);
+        const dx=pt.x-drawStart.x, dy=pt.y-drawStart.y;
+        if (Math.sqrt(dx*dx+dy*dy)>2) {
+          const id = Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+          setAnns(prev=>[...prev,{id,type:'arrow',x1:drawStart.x,y1:drawStart.y,x2:pt.x,y2:pt.y,twoHeads:true}]);
+        }
+        setDS(null); setDC(null);
+      }
+      function confirmText() {
+        if (!textPos||!textVal.trim()) { setTextPos(null); return; }
+        const id = Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+        setAnns(prev=>[...prev,{id,type:'text',x:textPos.x,y:textPos.y,text:textVal.trim()}]);
+        setTextPos(null); setTextVal('');
+      }
+      function selAnn(e,id) { e.stopPropagation(); setSelId(prev=>prev===id?null:id); }
+      function toggleHeads() {
+        setAnns(prev=>prev.map(a=>a.id===selId?{...a,twoHeads:!a.twoHeads}:a));
+      }
+      function delSel() { setAnns(prev=>prev.filter(a=>a.id!==selId)); setSelId(null); }
+      const selAnn_ = anns.find(a=>a.id===selId);
+      const S=4;
+      return (
+        <div className="ann-editor-overlay">
+          <div className="ann-editor-img-wrap">
+            <img src={imageUrl} className="ann-editor-img" draggable={false} />
+            <svg ref={svgRef} className="ann-svg-overlay" viewBox="0 0 100 100" preserveAspectRatio="none"
+              onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp}
+            >
+              {anns.map(ann=>{
+                const sel=ann.id===selId, clr=sel?'#ff8800':'#ef4444';
+                if (ann.type==='arrow') {
+                  const p2=annArrowPts(ann.x1,ann.y1,ann.x2,ann.y2,S);
+                  const p1=ann.twoHeads?annArrowPts(ann.x2,ann.y2,ann.x1,ann.y1,S):null;
+                  return (<g key={ann.id} onClick={e=>selAnn(e,ann.id)} style={{cursor:'pointer'}}>
+                    <line x1={ann.x1} y1={ann.y1} x2={ann.x2} y2={ann.y2} stroke={clr} strokeWidth="1.5"/>
+                    <polygon points={p2} fill={clr}/>
+                    {p1&&<polygon points={p1} fill={clr}/>}
+                    <line x1={ann.x1} y1={ann.y1} x2={ann.x2} y2={ann.y2} stroke="transparent" strokeWidth="5"/>
+                  </g>);
+                }
+                if (ann.type==='text') {
+                  return (<g key={ann.id} onClick={e=>selAnn(e,ann.id)} style={{cursor:'pointer'}}>
+                    <text x={ann.x} y={ann.y} fontSize="4" fontWeight="bold" fontFamily="Arial"
+                      stroke="rgba(0,0,0,0.75)" strokeWidth="0.5" paintOrder="stroke" fill={clr}>
+                      {ann.text}
+                    </text>
+                    <rect x={ann.x-1} y={ann.y-5} width={ann.text.length*2.6+2} height={6} fill="transparent"/>
+                  </g>);
+                }
+                return null;
+              })}
+              {drawStart&&drawCur&&<line x1={drawStart.x} y1={drawStart.y} x2={drawCur.x} y2={drawCur.y}
+                stroke="#ef4444" strokeWidth="1.5" strokeDasharray="3,2"/>}
+            </svg>
+            {textPos&&(
+              <div className="ann-text-modal">
+                <div style={{color:'#aaa',fontSize:12,marginBottom:8}}>Nhập nội dung chú thích:</div>
+                <input className="ann-text-input" autoFocus value={textVal}
+                  onChange={e=>setTextVal(e.target.value)}
+                  onKeyDown={e=>{if(e.key==='Enter')confirmText();}}
+                  placeholder="vd: 2585, 1000×2595..." />
+                <div className="ann-text-buttons">
+                  <button className="ann-tool-btn save-btn" style={{flex:1}} onClick={confirmText}>✔ Xác nhận</button>
+                  <button className="ann-tool-btn cancel-btn" style={{flex:1}} onClick={()=>setTextPos(null)}>✕ Hủy</button>
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="ann-toolbar">
+            <div className="ann-info-label">
+              {tool==='arrow'?'Kéo để vẽ mũi tên — bấm mũi tên để chọn':
+               tool==='text' ?'Bấm vào ảnh để đặt chữ số':
+               selAnn_?'Đã chọn — có thể đổi đầu hoặc xóa':'Bấm vào chú thích để chọn'}
+            </div>
+            <button className={'ann-tool-btn'+(tool==='arrow'?' active':'')}
+              onClick={()=>{setTool('arrow');setSelId(null);}}>↔ Mũi tên</button>
+            <button className={'ann-tool-btn'+(tool==='text'?' active':'')}
+              onClick={()=>{setTool('text');setSelId(null);}}>T Chữ số</button>
+            {selAnn_&&selAnn_.type==='arrow'&&(
+              <button className="ann-tool-btn head-btn" onClick={toggleHeads}>
+                {selAnn_.twoHeads?'→ 1 đầu':'↔ 2 đầu'}
+              </button>
+            )}
+            {selId&&<button className="ann-tool-btn del-btn" onClick={delSel}>🗑 Xóa</button>}
+            <button className="ann-tool-btn save-btn" onClick={()=>onSave(anns)}>✔ Lưu</button>
+            <button className="ann-tool-btn cancel-btn" onClick={onCancel}>✕ Hủy</button>
+          </div>
+        </div>
+      );
+    }
+
     function ImageDetail({ imageId, projectId, onBack }) {
       const [image, setImage]       = useState(null);
       const [notFound, setNotFound] = useState(false);
@@ -3829,6 +4028,8 @@
       // tagVersion: tăng khi nhận tagsUpdated event → buộc re-render, đọc lại getTagsByGroup()
       const [tagVersion, setTagVersion] = useState(0);
       const replaceInputRef = React.useRef(null);
+      const [annotations, setAnnotations] = useState([]);
+      const [annEditorOpen, setAnnEditorOpen] = useState(false);
 
       // Load ảnh + điền sẵn form
       useEffect(() => {
@@ -3859,6 +4060,7 @@
           notes:       img.notes       || '',
           tags:        Array.isArray(img.tags) ? [...img.tags] : [],
         });
+        setAnnotations(Array.isArray(img.annotations) ? [...img.annotations] : []);
       }, [imageId]);
 
       // Lắng nghe tagsUpdated → force re-render để getTagsByGroup() đọc lại localStorage
@@ -3948,6 +4150,7 @@
             unit:        form.unit || 'mm',
             notes:       form.notes,
             tags:        form.tags,
+            annotations: annotations,
           };
           // Chỉ thay imagePreviewUrl khi người dùng đã chọn ảnh mới
           if (pendingPreview) {
@@ -4029,9 +4232,31 @@
             {pendingPreview && (
               <span className="preview-changed-badge">Ảnh mới (chưa lưu)</span>
             )}
+            {annotations.length > 0 && (
+              <svg className="ann-readonly-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
+                {annotations.map(ann=>{
+                  if (ann.type==='arrow') {
+                    const p2=annArrowPts(ann.x1,ann.y1,ann.x2,ann.y2,4);
+                    const p1=ann.twoHeads?annArrowPts(ann.x2,ann.y2,ann.x1,ann.y1,4):null;
+                    return (<g key={ann.id}>
+                      <line x1={ann.x1} y1={ann.y1} x2={ann.x2} y2={ann.y2} stroke="#ef4444" strokeWidth="1.5"/>
+                      <polygon points={p2} fill="#ef4444"/>
+                      {p1&&<polygon points={p1} fill="#ef4444"/>}
+                    </g>);
+                  }
+                  if (ann.type==='text') {
+                    return (<text key={ann.id} x={ann.x} y={ann.y} fontSize="4" fontWeight="bold" fontFamily="Arial"
+                      stroke="rgba(0,0,0,0.75)" strokeWidth="0.5" paintOrder="stroke" fill="#ef4444">
+                      {ann.text}
+                    </text>);
+                  }
+                  return null;
+                })}
+              </svg>
+            )}
           </div>
 
-          {/* Nút Thay ảnh */}
+          {/* Nút Thay ảnh + Chú thích */}
           <input
             ref={replaceInputRef}
             type="file"
@@ -4040,14 +4265,26 @@
             style={{display:'none'}}
             onChange={handleReplaceFile}
           />
-          <button
-            className="btn-replace-photo"
-            type="button"
-            disabled={replacing || saving}
-            onClick={() => replaceInputRef.current && replaceInputRef.current.click()}
-          >
-            {replacing ? 'Đang xử lý ảnh...' : 'Thay ảnh'}
-          </button>
+          <div style={{display:'flex'}}>
+            <button
+              className="btn-replace-photo"
+              type="button"
+              style={{flex:1}}
+              disabled={replacing || saving}
+              onClick={() => replaceInputRef.current && replaceInputRef.current.click()}
+            >
+              {replacing ? 'Đang xử lý ảnh...' : 'Thay ảnh'}
+            </button>
+            <button
+              className="btn-replace-photo"
+              type="button"
+              style={{flex:1, borderLeft:'1px solid var(--border)', color:'#ef4444', borderColor:'#ef4444'}}
+              disabled={saving}
+              onClick={() => setAnnEditorOpen(true)}
+            >
+              ✏️ Chú thích{annotations.length>0?' ('+annotations.length+')':''}
+            </button>
+          </div>
 
           {/* Form */}
           <div className="image-detail-form">
@@ -4348,6 +4585,14 @@
             {/* Dòng 7: ngày */}
             <span className="photo-thumb-date">{formatDate(img.updatedAt || img.createdAt)}</span>
           </div>
+        {annEditorOpen && (
+          <AnnotationEditor
+            imageUrl={pendingPreview || image.imagePreviewUrl}
+            initialAnnotations={annotations}
+            onSave={function(anns){ setAnnotations(anns); setAnnEditorOpen(false); }}
+            onCancel={function(){ setAnnEditorOpen(false); }}
+          />
+        )}
         </div>
       );
     }
