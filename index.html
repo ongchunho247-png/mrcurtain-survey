@@ -1585,7 +1585,7 @@
     // =============================================
     // STORAGE UTILS
     // =============================================
-    const APP_PROMPT_VERSION = 'P29'; // Cập nhật khi lên version mới
+    const APP_PROMPT_VERSION = 'P30'; // Cập nhật khi lên version mới
     const STORAGE_KEY = 'mrcurtain_survey_projects';
     const STORAGE_KEY_LEGACY = 'mrcurtain_projects'; // key cũ từ Prompt 2
     // Khai báo sớm để runDataMigration() dùng được (Prompt 14.2)
@@ -3880,7 +3880,7 @@
     };
 
 
-    /* ── Annotation helpers (P29) ── */
+    /* ── Annotation helpers (P30) ── */
     function annArrowPts(x1,y1,x2,y2,s) {
       var dx=x2-x1,dy=y2-y1,len=Math.sqrt(dx*dx+dy*dy);
       if(len<0.001) return '';
@@ -3914,15 +3914,19 @@
       const [drawStart, setDS]    = useState(null);
       const [drawCur,   setDC]    = useState(null);
       const [selId, setSelId]     = useState(null);
+      // drag: move whole object
       const [dragId, setDragId]   = useState(null);
-      const [inlinePos, setIP]    = useState(null); // {x,y,sx,sy}
+      // rotate: one end of arrow is fixed, other follows pointer
+      const [rotState, setRot]    = useState(null); // {annId, movingKey:'x1y1'|'x2y2'}
+      // inline text edit
+      const [inlinePos, setIP]    = useState(null);
       const [inlineVal, setIV]    = useState('');
-      const [editingId, setEId]   = useState(null); // id của text đang edit
-      const svgRef    = React.useRef(null);
-      const dragRef   = React.useRef(null);
-      const inlineRef = React.useRef(null);
-      const annsRef   = React.useRef(anns);
-      annsRef.current = anns;
+      const [editingId, setEId]   = useState(null);
+      const svgRef      = React.useRef(null);
+      const dragRef     = React.useRef(null);
+      const inlineRef   = React.useRef(null);
+      const annsRef     = React.useRef(anns); annsRef.current = anns;
+      const lastTapRef  = React.useRef({time:0,id:null}); // double-tap tracking
 
       function toPct(e) {
         var svg=svgRef.current; if(!svg) return {x:0,y:0,sx:0,sy:0};
@@ -3949,14 +3953,11 @@
       }
       function openInline(pos,val,editId){
         setIP(pos); setIV(val||''); setEId(editId||null);
-        setTimeout(function(){
-          if(inlineRef.current){inlineRef.current.focus();inlineRef.current.select();}
-        },30);
+        setTimeout(function(){if(inlineRef.current){inlineRef.current.focus();inlineRef.current.select();}},30);
       }
       function confirmText(){
         var val=inlineVal.trim();
-        if(!inlinePos){return;}
-        if(val){
+        if(inlinePos&&val){
           if(editingId){
             setAnns(function(p){return p.map(function(a){return a.id===editingId?{...a,text:val}:a;});});
           } else {
@@ -3964,7 +3965,7 @@
             setAnns(function(p){return p.concat([{id,type:'text',x:inlinePos.x,y:inlinePos.y,text:val}]);});
           }
         }
-        setIP(null);setIV('');setEId(null);
+        setIP(null); setIV(''); setEId(null);
       }
       function onDown(e){
         e.preventDefault();
@@ -3973,26 +3974,55 @@
         var hit=hitTest(pt);
         if(hit){
           var ann=annsRef.current.find(function(a){return a.id===hit;});
+          var now=Date.now();
+          var isDouble=(now-lastTapRef.current.time<350)&&lastTapRef.current.id===hit;
+          lastTapRef.current={time:now,id:hit};
           setSelId(hit);
-          if(ann&&ann.type==='text'){
-            var sc=annToScreen(ann.x,ann.y);
-            openInline({x:ann.x,y:ann.y,sx:sc.sx,sy:sc.sy},ann.text,hit);
-          } else {
-            setDragId(hit);
-            dragRef.current={startPt:pt,startAnn:{...ann}};
+          if(ann.type==='text'){
+            if(isDouble){
+              // Double tap → edit
+              var sc=annToScreen(ann.x,ann.y);
+              openInline({x:ann.x,y:ann.y,sx:sc.sx,sy:sc.sy},ann.text,hit);
+            } else {
+              // Single tap → drag
+              setDragId(hit);
+              dragRef.current={startPt:pt,startAnn:{...ann}};
+            }
+            return;
+          }
+          if(ann.type==='arrow'){
+            // Check if near endpoint (within 8 units)
+            var d1=Math.sqrt((pt.x-ann.x1)*(pt.x-ann.x1)+(pt.y-ann.y1)*(pt.y-ann.y1));
+            var d2=Math.sqrt((pt.x-ann.x2)*(pt.x-ann.x2)+(pt.y-ann.y2)*(pt.y-ann.y2));
+            if(Math.min(d1,d2)<9){
+              // Near arrowhead → rotate mode
+              setRot({annId:hit, movingKey:d1<d2?'x1y1':'x2y2'});
+            } else {
+              // Middle of line → drag whole arrow
+              setDragId(hit);
+              dragRef.current={startPt:pt,startAnn:{...ann}};
+            }
+            return;
           }
           return;
         }
         setSelId(null);
+        lastTapRef.current={time:0,id:null};
         if(tool==='arrow'){setDS(pt);setDC(pt);}
-        else if(tool==='text'){
-          openInline({x:pt.x,y:pt.y,sx:pt.sx,sy:pt.sy},'',null);
-        }
+        else if(tool==='text'){openInline({x:pt.x,y:pt.y,sx:pt.sx,sy:pt.sy},'',null);}
       }
       function onMove(e){
         e.preventDefault();
+        var pt=toPct(e);
+        if(rotState){
+          setAnns(function(p){return p.map(function(a){
+            if(a.id!==rotState.annId) return a;
+            if(rotState.movingKey==='x1y1') return {...a,x1:pt.x,y1:pt.y};
+            return {...a,x2:pt.x,y2:pt.y};
+          });});
+          return;
+        }
         if(dragId&&dragRef.current){
-          var pt=toPct(e);
           var dx=pt.x-dragRef.current.startPt.x,dy=pt.y-dragRef.current.startPt.y;
           var sa=dragRef.current.startAnn;
           setAnns(function(p){return p.map(function(a){
@@ -4004,10 +4034,11 @@
           return;
         }
         if(!drawStart) return;
-        setDC(toPct(e));
+        setDC(pt);
       }
       function onUp(e){
         e.preventDefault();
+        if(rotState){setRot(null);return;}
         if(dragId){setDragId(null);dragRef.current=null;return;}
         if(!drawStart) return;
         var pt=toPct(e);
@@ -4018,10 +4049,19 @@
         }
         setDS(null);setDC(null);
       }
-      function toggleHeads(){setAnns(function(p){return p.map(function(a){return a.id===selId?{...a,twoHeads:!a.twoHeads}:a;});});}
       function delSel(){setAnns(function(p){return p.filter(function(a){return a.id!==selId;});});setSelId(null);}
+      function toggleHeads(){setAnns(function(p){return p.map(function(a){return a.id===selId?{...a,twoHeads:!a.twoHeads}:a;});});}
       var selAnn_=anns.find(function(a){return a.id===selId;});
-      const S=2.0; // arrowhead size — nhỏ gọn
+      const S=2.0;
+      // Status hint
+      var hint = rotState ? '🔄 Đang xoay — nhấc ngón tay để dừng' :
+                 dragId   ? '✥ Đang di chuyển...' :
+                 inlinePos? 'Nhập xong → Enter hoặc bấm ra ngoài' :
+                 tool==='arrow'
+                   ? (selAnn_&&selAnn_.type==='arrow'
+                       ? 'Bấm đầu mũi để xoay • Bấm giữa để kéo • 🗑 xóa'
+                       : 'Kéo để vẽ mũi tên')
+                   : 'Bấm để đặt • Kéo để di chuyển • Chạm 2× để sửa';
       return (
         <div className="ann-editor-overlay">
           <div className="ann-editor-img-wrap">
@@ -4030,33 +4070,41 @@
               onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp}
             >
               {anns.map(function(ann){
-                var sel=ann.id===selId&&!editingId;
-                var clr=sel?'#ff8800':'#ef4444';
+                var sel=(ann.id===selId)&&!editingId;
+                var isRot=rotState&&rotState.annId===ann.id;
+                var clr=(sel||isRot)?'#ff8800':'#ef4444';
                 if(ann.type==='arrow'){
                   var v=annVec(ann.x1,ann.y1,ann.x2,ann.y2);
                   if(v.len<0.001) return null;
-                  // Shorten line to not overlap arrowheads
-                  var lx1=ann.x1+(ann.twoHeads?v.ux*S:0);
-                  var ly1=ann.y1+(ann.twoHeads?v.uy*S:0);
-                  var lx2=ann.x2-v.ux*S;
-                  var ly2=ann.y2-v.uy*S;
+                  var lx1=ann.x1+(ann.twoHeads?v.ux*S:0), ly1=ann.y1+(ann.twoHeads?v.uy*S:0);
+                  var lx2=ann.x2-v.ux*S, ly2=ann.y2-v.uy*S;
                   var p2=annArrowPts(ann.x1,ann.y1,ann.x2,ann.y2,S);
                   var p1=ann.twoHeads?annArrowPts(ann.x2,ann.y2,ann.x1,ann.y1,S):null;
-                  return (<g key={ann.id} style={{cursor:'grab'}}>
+                  // Rotating endpoint dot
+                  var rotDot=isRot?(rotState.movingKey==='x1y1'
+                    ?{cx:ann.x1,cy:ann.y1}:{cx:ann.x2,cy:ann.y2}):null;
+                  return (<g key={ann.id}>
                     <line x1={lx1} y1={ly1} x2={lx2} y2={ly2} stroke={clr} strokeWidth="0.5"/>
                     <polygon points={p2} fill={clr}/>
                     {p1&&<polygon points={p1} fill={clr}/>}
-                    <line x1={ann.x1} y1={ann.y1} x2={ann.x2} y2={ann.y2} stroke="transparent" strokeWidth="5"/>
+                    {/* hit area */}
+                    <line x1={ann.x1} y1={ann.y1} x2={ann.x2} y2={ann.y2} stroke="transparent" strokeWidth="6"/>
+                    {/* endpoint handles when selected */}
+                    {(sel||isRot)&&<>
+                      <circle cx={ann.x1} cy={ann.y1} r="2.2" fill="rgba(0,0,0,0.5)" stroke="#fff" strokeWidth="0.5"/>
+                      <circle cx={ann.x2} cy={ann.y2} r="2.2" fill="rgba(0,0,0,0.5)" stroke="#fff" strokeWidth="0.5"/>
+                    </>}
+                    {/* spinning dot highlight */}
+                    {rotDot&&<circle cx={rotDot.cx} cy={rotDot.cy} r="2.8" fill="#ff8800" stroke="#fff" strokeWidth="0.5"/>}
                   </g>);
                 }
                 if(ann.type==='text'){
-                  if(ann.id===editingId) return null; // đang edit — ẩn, hiện inline input
-                  var tw=ann.text.length*2.4+4; var bh=5.5;
-                  var cx=ann.x+tw/2;
-                  return (<g key={ann.id} style={{cursor:'pointer'}}>
+                  if(ann.id===editingId) return null;
+                  var tw=ann.text.length*2.4+4; var bh=5.5; var cx2=ann.x+tw/2;
+                  return (<g key={ann.id}>
                     <rect x={ann.x} y={ann.y-bh/2} width={tw} height={bh} rx="1.5" ry="1.5"
                       fill={sel?'rgba(255,136,0,0.75)':'rgba(50,50,50,0.82)'}/>
-                    <text x={cx} y={ann.y} textAnchor="middle" dominantBaseline="central"
+                    <text x={cx2} y={ann.y} textAnchor="middle" dominantBaseline="central"
                       fontSize="3.5" fontWeight="bold" fontFamily="Arial" fill={sel?'#fff':'#ef4444'}>
                       {ann.text}
                     </text>
@@ -4069,11 +4117,8 @@
                 stroke="#ef4444" strokeWidth="0.5" strokeDasharray="2,1.5"/>}
             </svg>
             {inlinePos&&(
-              <div style={{
-                position:'fixed',left:inlinePos.sx,top:inlinePos.sy,
-                transform:'translate(-50%,-130%)',zIndex:400,
-                pointerEvents:'auto',
-              }}>
+              <div style={{position:'fixed',left:inlinePos.sx,top:inlinePos.sy,
+                transform:'translate(-50%,-130%)',zIndex:400,pointerEvents:'auto'}}>
                 <input ref={inlineRef} value={inlineVal}
                   onChange={function(e){setIV(e.target.value);}}
                   onKeyDown={function(e){
@@ -4099,25 +4144,18 @@
             background:'var(--bg-card)',borderTop:'1px solid var(--border)',
             padding:'10px 12px',display:'flex',gap:8,flexWrap:'wrap',alignItems:'center',
           }}>
-            <div style={{color:'var(--text-secondary)',fontSize:11,width:'100%',marginBottom:2,lineHeight:1.3}}>
-              {dragId?'Đang di chuyển...':
-               inlinePos?'Nhập xong → Enter hoặc bấm ra ngoài':
-               tool==='arrow'?'Kéo để vẽ • Kéo đối tượng để di chuyển • Bấm để chọn':
-               'Bấm vào ảnh để đặt chữ số • Bấm chữ để chỉnh sửa'}
-            </div>
-            {/* Tool buttons */}
-            <button
-              style={{
+            <div style={{
+              color: rotState?'#ef4444':'var(--text-secondary)',
+              fontSize:11,width:'100%',marginBottom:2,lineHeight:1.3,
+              fontWeight: rotState?'700':'400',
+            }}>{hint}</div>
+            <button style={{
                 flex:1,padding:'9px 0',borderRadius:8,border:'1.5px solid var(--border)',
                 background:tool==='arrow'?'var(--primary)':'var(--bg-card)',
-                color:tool==='arrow'?'#fff':'var(--text)',
-                fontSize:18,cursor:'pointer',lineHeight:1,
+                color:tool==='arrow'?'#fff':'var(--text)',fontSize:18,cursor:'pointer',lineHeight:1,
               }}
-              onClick={function(){setTool('arrow');setSelId(null);}}>
-              ↔
-            </button>
-            <button
-              style={{
+              onClick={function(){setTool('arrow');setSelId(null);}}>↔</button>
+            <button style={{
                 flex:1,padding:'9px 0',borderRadius:8,border:'1.5px solid var(--border)',
                 background:tool==='text'?'var(--primary)':'var(--bg-card)',
                 color:tool==='text'?'#fff':'var(--text)',
