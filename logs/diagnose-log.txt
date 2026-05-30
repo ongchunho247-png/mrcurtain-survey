@@ -1424,3 +1424,36 @@ are terminated then try again. If it still fails, a git process
 may have crashed in this repository earlier:
 remove the file manually to continue.
 ============================================================
+
+────────────────────────────────────────────────────────────
+[07:49:26 30/5/2026] DEPLOY THANH CONG
+Commit  : P27c: Remove stray AnnotationEditor modal from PhotoThumbCard (second occurrence)
+Branch  : main
+Hash    : 1b6392e P27c: Remove stray AnnotationEditor modal from PhotoThumbCard (second occurrence)
+Remote  : https://github.com/ongchunho247-png/mrcurtain-survey.git
+Netlify : tu deploy tu branch main (~30 giay)
+────────────────────────────────────────────────────────────
+
+============================================================
+[07:49:43 30/5/2026] LỖI DEPLOY
+Ly do : git add that bai
+error         : fatal: Unable to create '/sessions/pensive-bold-bardeen/mnt/web app mobile khao sat/.git/index.lock': File exists.
+
+Another git process seems to be running in this repository, e.g.
+an editor opened by 'git commit'. Please make sure all processes
+are terminated then try again. If it still fails, a git process
+may have crashed in this repository earlier:
+remove the file manually to continue.
+============================================================
+
+============================================================
+[08:17:25 30/5/2026] LỖI DEPLOY
+Ly do : git add that bai
+error         : fatal: Unable to create '/sessions/pensive-bold-bardeen/mnt/web app mobile khao sat/.git/index.lock': File exists.
+
+Another git process seems to be running in this repository, e.g.
+an editor opened by 'git commit'. Please make sure all processes
+are terminated then try again. If it still fails, a git process
+may have crashed in this repository earlier:
+remove the file manually to continue.
+============================================================

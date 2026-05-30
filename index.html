@@ -1585,7 +1585,7 @@
     // =============================================
     // STORAGE UTILS
     // =============================================
-    const APP_PROMPT_VERSION = 'P27c'; // Cập nhật khi lên version mới
+    const APP_PROMPT_VERSION = 'P28'; // Cập nhật khi lên version mới
     const STORAGE_KEY = 'mrcurtain_survey_projects';
     const STORAGE_KEY_LEGACY = 'mrcurtain_projects'; // key cũ từ Prompt 2
     // Khai báo sớm để runDataMigration() dùng được (Prompt 14.2)
@@ -3880,7 +3880,7 @@
     };
 
 
-    /* ── Annotation helpers (P27) ── */
+    /* ── Annotation helpers (P28) ── */
     function annArrowPts(x1,y1,x2,y2,s) {
       var dx=x2-x1,dy=y2-y1,len=Math.sqrt(dx*dx+dy*dy);
       if(len<0.001) return '';
@@ -3897,121 +3897,183 @@
       ctx.lineTo(x2-ux*size-px*ss,y2-uy*size-py*ss);
       ctx.closePath(); ctx.fill();
     }
+    function ptLineDist(px,py,x1,y1,x2,y2) {
+      var dx=x2-x1,dy=y2-y1,len2=dx*dx+dy*dy;
+      if(len2<0.001) return Math.sqrt((px-x1)*(px-x1)+(py-y1)*(py-y1));
+      var t=Math.max(0,Math.min(1,((px-x1)*dx+(py-y1)*dy)/len2));
+      var nx=x1+t*dx-px, ny=y1+t*dy-py;
+      return Math.sqrt(nx*nx+ny*ny);
+    }
 
     function AnnotationEditor({ imageUrl, initialAnnotations, onSave, onCancel }) {
-      const [anns, setAnns]         = useState(initialAnnotations || []);
-      const [tool, setTool]         = useState('arrow');
-      const [drawStart, setDS]      = useState(null);
-      const [drawCur,   setDC]      = useState(null);
-      const [selId, setSelId]       = useState(null);
-      const [textPos, setTextPos]   = useState(null);
-      const [textVal, setTextVal]   = useState('');
-      const svgRef = React.useRef(null);
+      const [anns, setAnns]     = useState(initialAnnotations || []);
+      const [tool, setTool]     = useState('arrow');
+      const [drawStart, setDS]  = useState(null);
+      const [drawCur,   setDC]  = useState(null);
+      const [selId, setSelId]   = useState(null);
+      const [dragId, setDragId] = useState(null);
+      const [inlinePos, setIP]  = useState(null); // {x,y,sx,sy} — inline text input
+      const [inlineVal, setIV]  = useState('');
+      const svgRef      = React.useRef(null);
+      const dragRef     = React.useRef(null); // {startPt, startAnn}
+      const inlineRef   = React.useRef(null);
 
       function toPct(e) {
-        const svg = svgRef.current; if (!svg) return {x:0,y:0};
-        const r = svg.getBoundingClientRect();
-        const s = e.touches ? e.touches[0] : (e.changedTouches ? e.changedTouches[0] : e);
+        var svg=svgRef.current; if(!svg) return {x:0,y:0};
+        var r=svg.getBoundingClientRect();
+        var s=e.touches?e.touches[0]:(e.changedTouches?e.changedTouches[0]:e);
         return {
-          x: Math.max(0,Math.min(100,(s.clientX-r.left)/r.width*100)),
-          y: Math.max(0,Math.min(100,(s.clientY-r.top)/r.height*100)),
+          x:Math.max(0,Math.min(100,(s.clientX-r.left)/r.width*100)),
+          y:Math.max(0,Math.min(100,(s.clientY-r.top)/r.height*100)),
+          sx:s.clientX, sy:s.clientY,
         };
+      }
+      function hitTest(pt) {
+        for (var i=anns.length-1;i>=0;i--) {
+          var a=anns[i];
+          if(a.type==='text' && Math.abs(pt.x-a.x)<14 && Math.abs(pt.y-a.y)<8) return a.id;
+          if(a.type==='arrow' && ptLineDist(pt.x,pt.y,a.x1,a.y1,a.x2,a.y2)<5) return a.id;
+        }
+        return null;
       }
       function onDown(e) {
         e.preventDefault();
-        const pt = toPct(e);
-        if (tool==='arrow') { setDS(pt); setDC(pt); setSelId(null); }
-        else if (tool==='text') { setTextPos(pt); setTextVal(''); setSelId(null); }
-      }
-      function onMove(e) { e.preventDefault(); if (!drawStart) return; setDC(toPct(e)); }
-      function onUp(e) {
-        e.preventDefault(); if (!drawStart) return;
-        const pt = toPct(e);
-        const dx=pt.x-drawStart.x, dy=pt.y-drawStart.y;
-        if (Math.sqrt(dx*dx+dy*dy)>2) {
-          const id = Date.now().toString(36)+Math.random().toString(36).slice(2,5);
-          setAnns(prev=>[...prev,{id,type:'arrow',x1:drawStart.x,y1:drawStart.y,x2:pt.x,y2:pt.y,twoHeads:true}]);
+        var pt=toPct(e);
+        var hit=hitTest(pt);
+        if (hit) {
+          setSelId(hit); setDragId(hit);
+          var ann=anns.find(function(a){return a.id===hit;});
+          dragRef.current={startPt:pt, startAnn:{...ann}};
+          return;
         }
-        setDS(null); setDC(null);
+        setSelId(null);
+        if(tool==='arrow'){setDS(pt);setDC(pt);}
+        else if(tool==='text'){
+          var svg=svgRef.current; if(!svg) return;
+          var r=svg.getBoundingClientRect();
+          setIP({x:pt.x,y:pt.y,sx:pt.sx,sy:pt.sy}); setIV('');
+          setTimeout(function(){inlineRef.current&&inlineRef.current.focus();},30);
+        }
+      }
+      function onMove(e) {
+        e.preventDefault();
+        var pt=toPct(e);
+        if(dragId&&dragRef.current) {
+          var dx=pt.x-dragRef.current.startPt.x, dy=pt.y-dragRef.current.startPt.y;
+          var sa=dragRef.current.startAnn;
+          setAnns(function(prev){return prev.map(function(a){
+            if(a.id!==dragId) return a;
+            if(a.type==='arrow') return {...a,x1:sa.x1+dx,y1:sa.y1+dy,x2:sa.x2+dx,y2:sa.y2+dy};
+            if(a.type==='text')  return {...a,x:sa.x+dx,y:sa.y+dy};
+            return a;
+          });});
+          return;
+        }
+        if(!drawStart) return;
+        setDC(pt);
+      }
+      function onUp(e) {
+        e.preventDefault();
+        if(dragId){setDragId(null);dragRef.current=null;return;}
+        if(!drawStart) return;
+        var pt=toPct(e);
+        var dx=pt.x-drawStart.x,dy=pt.y-drawStart.y;
+        if(Math.sqrt(dx*dx+dy*dy)>2){
+          var id=Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+          setAnns(function(prev){return prev.concat([{id,type:'arrow',x1:drawStart.x,y1:drawStart.y,x2:pt.x,y2:pt.y,twoHeads:true}]);});
+        }
+        setDS(null);setDC(null);
       }
       function confirmText() {
-        if (!textPos||!textVal.trim()) { setTextPos(null); return; }
-        const id = Date.now().toString(36)+Math.random().toString(36).slice(2,5);
-        setAnns(prev=>[...prev,{id,type:'text',x:textPos.x,y:textPos.y,text:textVal.trim()}]);
-        setTextPos(null); setTextVal('');
+        if(!inlinePos||!inlineVal.trim()){setIP(null);return;}
+        var id=Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+        setAnns(function(prev){return prev.concat([{id,type:'text',x:inlinePos.x,y:inlinePos.y,text:inlineVal.trim()}]);});
+        setIP(null);setIV('');
       }
-      function selAnn(e,id) { e.stopPropagation(); setSelId(prev=>prev===id?null:id); }
-      function toggleHeads() {
-        setAnns(prev=>prev.map(a=>a.id===selId?{...a,twoHeads:!a.twoHeads}:a));
-      }
-      function delSel() { setAnns(prev=>prev.filter(a=>a.id!==selId)); setSelId(null); }
-      const selAnn_ = anns.find(a=>a.id===selId);
-      const S=4;
+      function toggleHeads(){setAnns(function(p){return p.map(function(a){return a.id===selId?{...a,twoHeads:!a.twoHeads}:a;});});}
+      function delSel(){setAnns(function(p){return p.filter(function(a){return a.id!==selId;});});setSelId(null);}
+      var selAnn_=anns.find(function(a){return a.id===selId;});
+      const S=2.5;
       return (
         <div className="ann-editor-overlay">
           <div className="ann-editor-img-wrap">
-            <img src={imageUrl} className="ann-editor-img" draggable={false} />
+            <img src={imageUrl} className="ann-editor-img" draggable={false}/>
             <svg ref={svgRef} className="ann-svg-overlay" viewBox="0 0 100 100" preserveAspectRatio="none"
               onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp}
             >
-              {anns.map(ann=>{
-                const sel=ann.id===selId, clr=sel?'#ff8800':'#ef4444';
-                if (ann.type==='arrow') {
-                  const p2=annArrowPts(ann.x1,ann.y1,ann.x2,ann.y2,S);
-                  const p1=ann.twoHeads?annArrowPts(ann.x2,ann.y2,ann.x1,ann.y1,S):null;
-                  return (<g key={ann.id} onClick={e=>selAnn(e,ann.id)} style={{cursor:'pointer'}}>
-                    <line x1={ann.x1} y1={ann.y1} x2={ann.x2} y2={ann.y2} stroke={clr} strokeWidth="1.5"/>
+              {anns.map(function(ann){
+                var sel=ann.id===selId;
+                var clr=sel?'#ff8800':'#ef4444';
+                if(ann.type==='arrow'){
+                  var p2=annArrowPts(ann.x1,ann.y1,ann.x2,ann.y2,S);
+                  var p1=ann.twoHeads?annArrowPts(ann.x2,ann.y2,ann.x1,ann.y1,S):null;
+                  return (<g key={ann.id} style={{cursor:'grab'}}>
+                    <line x1={ann.x1} y1={ann.y1} x2={ann.x2} y2={ann.y2} stroke={clr} strokeWidth="0.8"/>
                     <polygon points={p2} fill={clr}/>
                     {p1&&<polygon points={p1} fill={clr}/>}
-                    <line x1={ann.x1} y1={ann.y1} x2={ann.x2} y2={ann.y2} stroke="transparent" strokeWidth="5"/>
+                    <line x1={ann.x1} y1={ann.y1} x2={ann.x2} y2={ann.y2} stroke="transparent" strokeWidth="4"/>
                   </g>);
                 }
-                if (ann.type==='text') {
-                  return (<g key={ann.id} onClick={e=>selAnn(e,ann.id)} style={{cursor:'pointer'}}>
-                    <text x={ann.x} y={ann.y} fontSize="4" fontWeight="bold" fontFamily="Arial"
-                      stroke="rgba(0,0,0,0.75)" strokeWidth="0.5" paintOrder="stroke" fill={clr}>
+                if(ann.type==='text'){
+                  var tw=ann.text.length*2.5+3;
+                  return (<g key={ann.id} style={{cursor:'grab'}}>
+                    <rect x={ann.x-1} y={ann.y-4.5} width={tw} height={6} rx="1.5" ry="1.5"
+                      fill="rgba(60,60,60,0.8)"/>
+                    <text x={ann.x} y={ann.y} fontSize="3.8" fontWeight="bold" fontFamily="Arial" fill={clr}>
                       {ann.text}
                     </text>
-                    <rect x={ann.x-1} y={ann.y-5} width={ann.text.length*2.6+2} height={6} fill="transparent"/>
+                    <rect x={ann.x-1} y={ann.y-4.5} width={tw} height={6} fill="transparent"/>
                   </g>);
                 }
                 return null;
               })}
               {drawStart&&drawCur&&<line x1={drawStart.x} y1={drawStart.y} x2={drawCur.x} y2={drawCur.y}
-                stroke="#ef4444" strokeWidth="1.5" strokeDasharray="3,2"/>}
+                stroke="#ef4444" strokeWidth="0.8" strokeDasharray="2,1.5"/>}
             </svg>
-            {textPos&&(
-              <div className="ann-text-modal">
-                <div style={{color:'#aaa',fontSize:12,marginBottom:8}}>Nhập nội dung chú thích:</div>
-                <input className="ann-text-input" autoFocus value={textVal}
-                  onChange={e=>setTextVal(e.target.value)}
-                  onKeyDown={e=>{if(e.key==='Enter')confirmText();}}
-                  placeholder="vd: 2585, 1000×2595..." />
-                <div className="ann-text-buttons">
-                  <button className="ann-tool-btn save-btn" style={{flex:1}} onClick={confirmText}>✔ Xác nhận</button>
-                  <button className="ann-tool-btn cancel-btn" style={{flex:1}} onClick={()=>setTextPos(null)}>✕ Hủy</button>
-                </div>
+            {inlinePos&&(
+              <div style={{
+                position:'fixed',left:inlinePos.sx,top:inlinePos.sy,
+                transform:'translate(-50%,-120%)',zIndex:400,
+              }}>
+                <input ref={inlineRef} value={inlineVal}
+                  onChange={function(e){setIV(e.target.value);}}
+                  onKeyDown={function(e){if(e.key==='Enter')confirmText();if(e.key==='Escape')setIP(null);}}
+                  onBlur={confirmText}
+                  style={{
+                    background:'rgba(30,30,30,0.92)',color:'#ef4444',
+                    border:'1.5px solid #ef4444',borderRadius:8,
+                    padding:'6px 12px',fontSize:16,fontFamily:'Arial',
+                    fontWeight:'bold',outline:'none',minWidth:100,textAlign:'center',
+                  }}
+                  placeholder="nhập số đo..."
+                />
               </div>
             )}
           </div>
-          <div className="ann-toolbar">
-            <div className="ann-info-label">
-              {tool==='arrow'?'Kéo để vẽ mũi tên — bấm mũi tên để chọn':
-               tool==='text' ?'Bấm vào ảnh để đặt chữ số':
-               selAnn_?'Đã chọn — có thể đổi đầu hoặc xóa':'Bấm vào chú thích để chọn'}
+
+          {/* Toolbar — dùng style chuẩn của app */}
+          <div style={{
+            background:'var(--bg-card)',borderTop:'1px solid var(--border)',
+            padding:'10px 12px',display:'flex',gap:8,flexWrap:'wrap',
+          }}>
+            <div style={{color:'var(--text-secondary)',fontSize:12,width:'100%',marginBottom:2}}>
+              {dragId?'Đang di chuyển...':
+               tool==='arrow'?'Kéo vẽ mũi tên • Kéo đối tượng để di chuyển':
+               tool==='text'?'Bấm ảnh để đặt chữ số • Kéo để di chuyển':
+               selAnn_?'Đã chọn — dùng các nút bên dưới':'Bấm vào chú thích để chọn'}
             </div>
-            <button className={'ann-tool-btn'+(tool==='arrow'?' active':'')}
-              onClick={()=>{setTool('arrow');setSelId(null);}}>↔ Mũi tên</button>
-            <button className={'ann-tool-btn'+(tool==='text'?' active':'')}
-              onClick={()=>{setTool('text');setSelId(null);}}>T Chữ số</button>
+            <button className={'btn btn-secondary'+(tool==='arrow'?' btn-primary':'')} style={{flex:1}}
+              onClick={function(){setTool('arrow');setSelId(null);}}>↔ Mũi tên</button>
+            <button className={'btn btn-secondary'+(tool==='text'?' btn-primary':'')} style={{flex:1}}
+              onClick={function(){setTool('text');setSelId(null);}}>T Chữ số</button>
             {selAnn_&&selAnn_.type==='arrow'&&(
-              <button className="ann-tool-btn head-btn" onClick={toggleHeads}>
+              <button className="btn btn-secondary" style={{flex:1}} onClick={toggleHeads}>
                 {selAnn_.twoHeads?'→ 1 đầu':'↔ 2 đầu'}
               </button>
             )}
-            {selId&&<button className="ann-tool-btn del-btn" onClick={delSel}>🗑 Xóa</button>}
-            <button className="ann-tool-btn save-btn" onClick={()=>onSave(anns)}>✔ Lưu</button>
-            <button className="ann-tool-btn cancel-btn" onClick={onCancel}>✕ Hủy</button>
+            {selId&&<button className="btn btn-secondary" style={{flex:1,color:'var(--danger)'}} onClick={delSel}>🗑 Xóa</button>}
+            <button className="btn btn-primary" style={{flex:1}} onClick={function(){onSave(anns);}}>✔ Lưu</button>
+            <button className="btn btn-secondary" style={{flex:1}} onClick={onCancel}>✕ Hủy</button>
           </div>
         </div>
       );
