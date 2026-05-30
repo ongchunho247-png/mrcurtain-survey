@@ -1585,7 +1585,7 @@
     // =============================================
     // STORAGE UTILS
     // =============================================
-    const APP_PROMPT_VERSION = 'P31'; // Cập nhật khi lên version mới
+    const APP_PROMPT_VERSION = 'P32'; // Cập nhật khi lên version mới
     const STORAGE_KEY = 'mrcurtain_survey_projects';
     const STORAGE_KEY_LEGACY = 'mrcurtain_projects'; // key cũ từ Prompt 2
     // Khai báo sớm để runDataMigration() dùng được (Prompt 14.2)
@@ -3914,27 +3914,46 @@
       const [drawStart, setDS]    = useState(null);
       const [drawCur,   setDC]    = useState(null);
       const [selId, setSelId]     = useState(null);
-      // drag: move whole object
       const [dragId, setDragId]   = useState(null);
-      // rotate: one end of arrow is fixed, other follows pointer
-      const [rotState, setRot]    = useState(null); // {annId, movingKey:'x1y1'|'x2y2'}
-      // inline text edit
+      const [rotState, setRot]    = useState(null);
       const [inlinePos, setIP]    = useState(null);
       const [inlineVal, setIV]    = useState('');
       const [editingId, setEId]   = useState(null);
+      // P32: save/discard dialog
+      const [showExit, setShowExit] = useState(false);
+      // P32: image offset within wrap (for SVG coord sync)
+      const [imgOff, setImgOff]   = useState({x:0,y:0,w:100,h:100}); // % of wrap
       const svgRef      = React.useRef(null);
+      const overlayRef  = React.useRef(null);
+      const imgRef      = React.useRef(null);
       const dragRef     = React.useRef(null);
       const inlineRef   = React.useRef(null);
       const annsRef     = React.useRef(anns); annsRef.current = anns;
       const lastTapRef  = React.useRef({time:0,id:null});
-      // Prevent browser swipe-back during annotation drag
+      // P32: Prevent swipe-back on entire overlay
       React.useEffect(function(){
-        var el = svgRef.current; if(!el) return;
+        var el = overlayRef.current; if(!el) return;
         function noScroll(e){ e.preventDefault(); }
         el.addEventListener("touchstart", noScroll, {passive:false});
         el.addEventListener("touchmove",  noScroll, {passive:false});
         return function(){ el.removeEventListener("touchstart",noScroll); el.removeEventListener("touchmove",noScroll); };
-      }, []); // double-tap tracking
+      }, []);
+      // P32: compute actual image rect within wrap
+      function computeImgOff(){
+        var img=imgRef.current; if(!img) return;
+        var wrap=img.parentElement; if(!wrap) return;
+        var cw=wrap.clientWidth, ch=wrap.clientHeight;
+        var nw=img.naturalWidth||img.width||cw, nh=img.naturalHeight||img.height||ch;
+        if(!nw||!nh) return;
+        var scale=Math.min(cw/nw, ch/nh);
+        var rw=nw*scale, rh=nh*scale;
+        var rx=(cw-rw)/2, ry=(ch-rh)/2;
+        setImgOff({x:rx/cw*100, y:ry/ch*100, w:rw/cw*100, h:rh/ch*100});
+      }
+      // P32: isDirty check for save/discard
+      var initJson=JSON.stringify(initialAnnotations||[]);
+      var isDirty=JSON.stringify(anns)!==initJson;
+      function tryClose(){ if(isDirty){ setShowExit(true); } else { onCancel(); } }
 
       function toPct(e) {
         var svg=svgRef.current; if(!svg) return {x:0,y:0,sx:0,sy:0};
@@ -4071,10 +4090,26 @@
                        : 'Kéo để vẽ mũi tên')
                    : 'Bấm để đặt • Kéo để di chuyển • Chạm 2× để sửa';
       return (
-        <div className="ann-editor-overlay">
+        <div className="ann-editor-overlay" ref={overlayRef}>
+          {/* P32: save/discard dialog */}
+          {showExit && (
+            <div style={{position:'fixed',inset:0,zIndex:400,background:'rgba(0,0,0,0.7)',display:'flex',alignItems:'center',justifyContent:'center'}}>
+              <div style={{background:'var(--bg-card)',borderRadius:14,padding:'24px 20px',width:280,boxShadow:'0 8px 32px rgba(0,0,0,0.5)'}}>
+                <div style={{fontSize:16,fontWeight:'bold',color:'var(--text)',marginBottom:8}}>Lưu chú thích?</div>
+                <div style={{fontSize:13,color:'var(--text-secondary)',marginBottom:20}}>Bạn có thay đổi chưa lưu.</div>
+                <div style={{display:'flex',gap:10}}>
+                  <button className="btn btn-secondary" style={{flex:1}} onClick={function(){setShowExit(false);}}>Tiếp tục</button>
+                  <button className="btn btn-secondary" style={{flex:1,color:'var(--danger)'}} onClick={function(){setShowExit(false);onCancel();}}>Bỏ</button>
+                  <button className="btn btn-primary" style={{flex:1}} onClick={function(){setShowExit(false);onSave(anns);}}>Lưu</button>
+                </div>
+              </div>
+            </div>
+          )}
           <div className="ann-editor-img-wrap">
-            <img src={imageUrl} className="ann-editor-img" draggable={false}/>
+            <img ref={imgRef} src={imageUrl} className="ann-editor-img" draggable={false}
+              onLoad={computeImgOff}/>
             <svg ref={svgRef} className="ann-svg-overlay" viewBox="0 0 100 100" preserveAspectRatio="none"
+              style={{position:'absolute',left:imgOff.x+'%',top:imgOff.y+'%',width:imgOff.w+'%',height:imgOff.h+'%'}}
               onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp}
             >
               {anns.map(function(ann){
@@ -4198,6 +4233,18 @@
       const [annotations, setAnnotations] = useState([]);
       const [annEditorOpen, setAnnEditorOpen] = useState(false);
       const [collSections, setCollSections]   = useState(new Set());
+      const [roImgOff, setRoImgOff] = useState({x:0,y:0,w:100,h:100}); // P32: readonly SVG offset
+      const roImgRef = React.useRef(null);
+      function computeRoOff(){
+        var img=roImgRef.current; if(!img) return;
+        var wrap=img.parentElement; if(!wrap) return;
+        var cw=wrap.clientWidth, ch=wrap.clientHeight;
+        var nw=img.naturalWidth||img.width||cw, nh=img.naturalHeight||img.height||ch;
+        if(!nw||!nh) return;
+        var scale=Math.min(cw/nw,ch/nh);
+        var rw=nw*scale, rh=nh*scale;
+        setRoImgOff({x:(cw-rw)/2/cw*100,y:(ch-rh)/2/ch*100,w:rw/cw*100,h:rh/ch*100});
+      }
       function toggleColl(name){ setCollSections(function(prev){
         var s=new Set(prev); s.has(name)?s.delete(name):s.add(name); return s;
       }); }
@@ -4396,15 +4443,18 @@
           {/* Ảnh lớn — hiển thị pendingPreview nếu đã chọn ảnh mới */}
           <div className="image-detail-preview-wrap">
             <img
+              ref={roImgRef}
               src={pendingPreview || image.imagePreviewUrl}
               alt="Ảnh khảo sát"
               className="image-detail-preview"
+              onLoad={computeRoOff}
             />
             {pendingPreview && (
               <span className="preview-changed-badge">Ảnh mới (chưa lưu)</span>
             )}
             {annotations.length > 0 && (
-              <svg className="ann-readonly-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
+              <svg className="ann-readonly-svg" viewBox="0 0 100 100" preserveAspectRatio="none"
+                style={{position:'absolute',left:roImgOff.x+'%',top:roImgOff.y+'%',width:roImgOff.w+'%',height:roImgOff.h+'%'}}>
                 {annotations.map(function(ann){
                   const RS=2.0;
                   if (ann.type==='arrow') {
