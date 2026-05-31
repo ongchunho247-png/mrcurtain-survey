@@ -1585,7 +1585,7 @@
     // =============================================
     // STORAGE UTILS
     // =============================================
-    const APP_PROMPT_VERSION = 'P41'; // Cập nhật khi lên version mới
+    const APP_PROMPT_VERSION = 'P42'; // Cập nhật khi lên version mới
     const STORAGE_KEY = 'mrcurtain_survey_projects';
     const STORAGE_KEY_LEGACY = 'mrcurtain_projects'; // key cũ từ Prompt 2
     // Khai báo sớm để runDataMigration() dùng được (Prompt 14.2)
@@ -3997,16 +3997,14 @@
       React.useEffect(function(){
         isDirtyRef.current = (JSON.stringify(anns) !== JSON.stringify(initialAnnotations||[]));
       });
-      // P41: history.pushState so swipe-back triggers popstate instead of real navigation
+      // P42: history.pushState — always re-push on popstate, never auto-exit
       React.useEffect(function(){
         history.pushState({annEditor:true}, '');
         function onPop(){
-          if(isDirtyRef.current){
-            history.pushState({annEditor:true}, '');
-            setShowExit(true);
-          } else {
-            onCancel();
-          }
+          // Always stay in editor; re-push so future back gestures still intercepted
+          history.pushState({annEditor:true}, '');
+          // If dirty show dialog, otherwise do nothing (user still inside editor)
+          if(isDirtyRef.current){ setShowExit(true); }
         }
         window.addEventListener('popstate', onPop);
         return function(){ window.removeEventListener('popstate', onPop); };
@@ -4086,7 +4084,8 @@
       function onDown(e){
         e.preventDefault();
         var pt=toPct(e);
-        if(inlinePos){confirmText();return;}
+        // P42: tap anywhere on canvas confirms open text input
+        if(inlinePos||pendingLabelId){confirmText();return;}
         var hit=hitTest(pt);
         if(hit){
           var ann=annsRef.current.find(function(a){return a.id===hit;});
@@ -4107,6 +4106,14 @@
             return;
           }
           if(ann.type==='arrow'){
+            if(isDouble && ann.label!==undefined){
+              // P42: Double tap arrow with label → edit label
+              var mx=(ann.x1+ann.x2)/2, my=(ann.y1+ann.y2)/2;
+              var svgEl2=svgRef.current; var r2=svgEl2?svgEl2.getBoundingClientRect():{left:0,top:0,width:1,height:1};
+              setIP({x:mx,y:my,sx:r2.left+mx/100*r2.width,sy:r2.top+my/100*r2.height});
+              setIV(ann.label||''); setPLId(ann.id);
+              return;
+            }
             // Check if near endpoint (within 8 units)
             var d1=Math.sqrt((pt.x-ann.x1)*(pt.x-ann.x1)+(pt.y-ann.y1)*(pt.y-ann.y1));
             var d2=Math.sqrt((pt.x-ann.x2)*(pt.x-ann.x2)+(pt.y-ann.y2)*(pt.y-ann.y2));
@@ -4186,7 +4193,8 @@
                        : (tool==='arrowLabel'?'Kéo để vẽ mũi tên có nhãn':'Kéo để vẽ mũi tên'))
                    : 'Bấm để đặt • Kéo để di chuyển • Chạm 2× để sửa';
       return (
-        <div className="ann-editor-overlay" ref={overlayRef}>
+        <div className="ann-editor-overlay" ref={overlayRef}
+          onClick={function(e){if((inlinePos||pendingLabelId)&&e.target.tagName!=='INPUT'&&e.target.tagName!=='BUTTON'){confirmText();}}}>
           {/* P32: save/discard dialog */}
           {showExit && (
             <div style={{position:'fixed',inset:0,zIndex:400,background:'rgba(0,0,0,0.7)',display:'flex',alignItems:'center',justifyContent:'center'}}>
@@ -7072,25 +7080,4 @@
       }
 
       if (screen === 'settings') {
-        return <SettingsScreen onBack={handleBack} />;
-      }
-
-      // Mặc định: màn hình danh sách công trình
-      return (
-        <ProjectList
-          onCreateNew={() => goTo("create")}
-          onSelectProject={projId => goTo("detail", projId)}
-          onOpenTagManager={() => goTo("tag-manager")}
-          onOpenSettings={() => goTo("settings")}
-          onOpenTrash={() => goTo("trash")}
-        />
-      );
-    }
-
-    // ── Mount ─────────────────────────────────────────────────
-    const rootEl = document.getElementById("root");
-    ReactDOM.createRoot(rootEl).render(<App />);
-  </script>
-</body>
-</html>
-                                                      
+        r
