@@ -1585,7 +1585,7 @@
     // =============================================
     // STORAGE UTILS
     // =============================================
-    const APP_PROMPT_VERSION = 'P47'; // Cập nhật khi lên version mới
+    const APP_PROMPT_VERSION = 'P48'; // Cập nhật khi lên version mới
     const STORAGE_KEY = 'mrcurtain_survey_projects';
     const STORAGE_KEY_LEGACY = 'mrcurtain_projects'; // key cũ từ Prompt 2
     // Khai báo sớm để runDataMigration() dùng được (Prompt 14.2)
@@ -7024,6 +7024,8 @@
           if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
           // Không kích hoạt khi modal đang mở
           if (document.querySelector('.modal-overlay')) return;
+          // P48: Không kích hoạt khi annotation editor đang mở
+          if (document.querySelector('.ann-editor-overlay')) return;
           // Không kích hoạt khi đang ở chế độ chọn ảnh (tránh xung đột drag-select)
           if (e.target.closest('[data-selecting="true"]')) return;
           sx = e.touches[0].clientX;
