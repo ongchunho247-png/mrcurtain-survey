@@ -991,8 +991,8 @@
     .ann-text-modal { position:absolute; bottom:0; left:0; right:0; background:#111; border-top:1px solid #333; padding:14px 16px; z-index:10; }
     .ann-text-input { width:100%; padding:11px 12px; font-size:16px; background:#2a2a2a; color:#fff; border:1.5px solid #555; border-radius:8px; outline:none; margin-bottom:10px; box-sizing:border-box; }
     .ann-text-buttons { display:flex; gap:8px; }
-    .btn-annotate { display:block; width:calc(100% - 0px); background:var(--bg-card); border:1.5px dashed #ef4444; color:#ef4444; font-size:14px; font-weight:700; padding:11px 0; border-radius:0; cursor:pointer; text-align:center; transition:background 0.15s; }
-    .btn-annotate:active { opacity:0.8; }
+    .btn-annotate { display:block; width:100%; background:var(--bg-card); border:1.5px solid var(--border); color:var(--text); font-size:14px; font-weight:600; padding:11px 0; border-radius:0; cursor:pointer; text-align:center; transition:background 0.15s; }
+    .btn-annotate:active { background:var(--bg); }
     .ann-readonly-svg { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
         .image-detail-preview-wrap {
       background: #000;
@@ -1585,7 +1585,7 @@
     // =============================================
     // STORAGE UTILS
     // =============================================
-    const APP_PROMPT_VERSION = 'P32'; // Cập nhật khi lên version mới
+    const APP_PROMPT_VERSION = 'P33'; // Cập nhật khi lên version mới
     const STORAGE_KEY = 'mrcurtain_survey_projects';
     const STORAGE_KEY_LEGACY = 'mrcurtain_projects'; // key cũ từ Prompt 2
     // Khai báo sớm để runDataMigration() dùng được (Prompt 14.2)
@@ -3046,23 +3046,41 @@
             /* image */
             var ix=PAD+Math.round((maxIW-iW)/2);
             ctx.drawImage(domImg,ix,y,iW,iH);
-            /* Draw annotations (P27) */
+            /* Draw annotations (P33: proportional sizing) */
             if (Array.isArray(img.annotations) && img.annotations.length>0) {
+              var aScale=Math.min(iW,iH)/100;
+              var aHeadSz=Math.max(6, aScale*2.2);
+              var aLineW=Math.max(1, aScale*0.55);
+              var aFontSz=Math.max(10, aScale*3.8);
               img.annotations.forEach(function(ann) {
                 if (ann.type==='arrow') {
                   var ax1=ix+ann.x1/100*iW, ay1=y+ann.y1/100*iH;
                   var ax2=ix+ann.x2/100*iW, ay2=y+ann.y2/100*iH;
-                  ctx.strokeStyle='#ef4444'; ctx.lineWidth=3;
-                  ctx.beginPath(); ctx.moveTo(ax1,ay1); ctx.lineTo(ax2,ay2); ctx.stroke();
-                  drawCanvasArrowHead(ctx,ax1,ay1,ax2,ay2,14);
-                  if (ann.twoHeads) drawCanvasArrowHead(ctx,ax2,ay2,ax1,ay1,14);
+                  var av=annVec(ann.x1,ann.y1,ann.x2,ann.y2);
+                  var aHS=aHeadSz/aScale; // in % units for annArrowPts helper (not used here — calc directly)
+                  ctx.strokeStyle='#ef4444'; ctx.lineWidth=aLineW;
+                  // shorten line so it doesn't poke through arrowhead
+                  var ux2=(ax2-ax1), uy2=(ax2==ax1&&ay2==ay1)?0:(ay2-ay1);
+                  var alen=Math.sqrt(ux2*ux2+uy2*uy2); if(alen<0.001) return;
+                  ux2/=alen; uy2/=alen;
+                  var lx2c=ax2-ux2*aHeadSz, ly2c=ay2-uy2*aHeadSz;
+                  var lx1c=ann.twoHeads?ax1+ux2*aHeadSz:ax1, ly1c=ann.twoHeads?ay1+uy2*aHeadSz:ay1;
+                  ctx.beginPath(); ctx.moveTo(lx1c,ly1c); ctx.lineTo(lx2c,ly2c); ctx.stroke();
+                  drawCanvasArrowHead(ctx,ax1,ay1,ax2,ay2,aHeadSz);
+                  if (ann.twoHeads) drawCanvasArrowHead(ctx,ax2,ay2,ax1,ay1,aHeadSz);
                 }
                 if (ann.type==='text') {
                   var tx=ix+ann.x/100*iW, ty2=y+ann.y/100*iH;
-                  ctx.font='bold 18px Arial';
-                  ctx.strokeStyle='rgba(0,0,0,0.8)'; ctx.lineWidth=4; ctx.lineJoin='round';
-                  ctx.strokeText(ann.text,tx,ty2);
-                  ctx.fillStyle='#ef4444'; ctx.fillText(ann.text,tx,ty2);
+                  var fsx=Math.round(aFontSz);
+                  ctx.font='bold '+fsx+'px Arial';
+                  var tw2=ctx.measureText(ann.text).width;
+                  var bpad=fsx*0.3, bh2=fsx*1.4;
+                  ctx.fillStyle='rgba(50,50,50,0.82)';
+                  var bx2=tx-bpad, by2=ty2-bh2/2;
+                  ctx.beginPath(); ctx.roundRect(bx2,by2,tw2+bpad*2,bh2,3); ctx.fill();
+                  ctx.fillStyle='#ef4444'; ctx.textAlign='left'; ctx.textBaseline='middle';
+                  ctx.fillText(ann.text,tx,ty2);
+                  ctx.textBaseline='alphabetic';
                 }
               });
             }
@@ -3930,13 +3948,19 @@
       const inlineRef   = React.useRef(null);
       const annsRef     = React.useRef(anns); annsRef.current = anns;
       const lastTapRef  = React.useRef({time:0,id:null});
-      // P32: Prevent swipe-back on entire overlay
+      // P33: Prevent swipe-back — attach to document so browser nav gesture is blocked
       React.useEffect(function(){
-        var el = overlayRef.current; if(!el) return;
-        function noScroll(e){ e.preventDefault(); }
-        el.addEventListener("touchstart", noScroll, {passive:false});
-        el.addEventListener("touchmove",  noScroll, {passive:false});
-        return function(){ el.removeEventListener("touchstart",noScroll); el.removeEventListener("touchmove",noScroll); };
+        function noScroll(e){
+          if(e.touches && e.touches.length===1) e.preventDefault();
+        }
+        document.addEventListener("touchstart", noScroll, {passive:false});
+        document.addEventListener("touchmove",  noScroll, {passive:false});
+        document.body.style.overscrollBehavior = 'none';
+        return function(){
+          document.removeEventListener("touchstart", noScroll);
+          document.removeEventListener("touchmove",  noScroll);
+          document.body.style.overscrollBehavior = '';
+        };
       }, []);
       // P32: compute actual image rect within wrap
       function computeImgOff(){
@@ -4781,12 +4805,44 @@
           )}
 
           {/* Ảnh */}
-          <img
-            src={img.imagePreviewUrl}
-            alt={`Ảnh khảo sát ${idx + 1}`}
-            className="photo-thumb-img"
-            loading="lazy"
-          />
+          <div style={{position:'relative',width:'100%'}}>
+            <img
+              src={img.imagePreviewUrl}
+              alt={`Ảnh khảo sát ${idx + 1}`}
+              className="photo-thumb-img"
+              loading="lazy"
+            />
+            {Array.isArray(img.annotations) && img.annotations.length > 0 && (
+              <svg viewBox="0 0 100 100" preserveAspectRatio="none"
+                style={{position:'absolute',inset:0,width:'100%',height:'100%',pointerEvents:'none'}}>
+                {img.annotations.map(function(ann){
+                  var RS=2.0;
+                  if(ann.type==='arrow'){
+                    var v=annVec(ann.x1,ann.y1,ann.x2,ann.y2);
+                    if(v.len<0.001) return null;
+                    var lx1=ann.x1+(ann.twoHeads?v.ux*RS:0),ly1=ann.y1+(ann.twoHeads?v.uy*RS:0);
+                    var lx2=ann.x2-v.ux*RS,ly2=ann.y2-v.uy*RS;
+                    var p2=annArrowPts(ann.x1,ann.y1,ann.x2,ann.y2,RS);
+                    var p1=ann.twoHeads?annArrowPts(ann.x2,ann.y2,ann.x1,ann.y1,RS):null;
+                    return (<g key={ann.id}>
+                      <line x1={lx1} y1={ly1} x2={lx2} y2={ly2} stroke="#ef4444" strokeWidth="0.8"/>
+                      <polygon points={p2} fill="#ef4444"/>
+                      {p1&&<polygon points={p1} fill="#ef4444"/>}
+                    </g>);
+                  }
+                  if(ann.type==='text'){
+                    var tw=ann.text.length*2.4+4,bh=5.5,cx=ann.x+tw/2;
+                    return (<g key={ann.id}>
+                      <rect x={ann.x} y={ann.y-bh/2} width={tw} height={bh} rx="1.5" ry="1.5" fill="rgba(50,50,50,0.82)"/>
+                      <text x={cx} y={ann.y} textAnchor="middle" dominantBaseline="central"
+                        fontSize="3.5" fontWeight="bold" fontFamily="Arial" fill="#ef4444">{ann.text}</text>
+                    </g>);
+                  }
+                  return null;
+                })}
+              </svg>
+            )}
+          </div>
 
           {/* Tóm tắt thông tin — bố cục cố định 7 dòng */}
           <div className="thumb-summary">
