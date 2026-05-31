@@ -1585,7 +1585,7 @@
     // =============================================
     // STORAGE UTILS
     // =============================================
-    const APP_PROMPT_VERSION = 'P33'; // Cập nhật khi lên version mới
+    const APP_PROMPT_VERSION = 'P34'; // Cập nhật khi lên version mới
     const STORAGE_KEY = 'mrcurtain_survey_projects';
     const STORAGE_KEY_LEGACY = 'mrcurtain_projects'; // key cũ từ Prompt 2
     // Khai báo sớm để runDataMigration() dùng được (Prompt 14.2)
@@ -3306,8 +3306,36 @@
                 '<span style="padding:1px 7px;border-radius:10px;font-size:10px;font-weight:600;background:' + sBg + ';color:' + sClr + '">' + sLbl + '</span>' +
               '</div>' +
               '<div style="display:flex;gap:10px;padding:8px;align-items:flex-start">' +
-                '<img src="' + (img.imagePreviewUrl || '') + '" ' +
-                  'style="width:' + THUMB_W + 'px;height:' + THUMB_H + 'px;object-fit:cover;border-radius:4px;flex-shrink:0;border:1px solid #e5e7eb" />' +
+                (function(){
+                  var annSvg='';
+                  if(Array.isArray(img.annotations)&&img.annotations.length>0){
+                    var svgParts=img.annotations.map(function(ann){
+                      var RS=2.0;
+                      if(ann.type==='arrow'){
+                        var v=annVec(ann.x1,ann.y1,ann.x2,ann.y2); if(v.len<0.001) return '';
+                        var lx1=ann.x1+(ann.twoHeads?v.ux*RS:0),ly1=ann.y1+(ann.twoHeads?v.uy*RS:0);
+                        var lx2=ann.x2-v.ux*RS,ly2=ann.y2-v.uy*RS;
+                        var p2=annArrowPts(ann.x1,ann.y1,ann.x2,ann.y2,RS);
+                        var p1=ann.twoHeads?annArrowPts(ann.x2,ann.y2,ann.x1,ann.y1,RS):'';
+                        var lbl='';
+                        if(ann.label){var mx=(ann.x1+ann.x2)/2,my=(ann.y1+ann.y2)/2,ltw=ann.label.length*2.4+4,lbh=5.5;
+                          lbl='<rect x="'+(mx-ltw/2)+'" y="'+(my-lbh/2)+'" width="'+ltw+'" height="'+lbh+'" rx="1.5" ry="1.5" fill="rgba(50,50,50,0.85)"/>'+
+                              '<text x="'+mx+'" y="'+my+'" text-anchor="middle" dominant-baseline="central" font-size="3.5" font-weight="bold" font-family="Arial" fill="#ef4444">'+escapeHtml(ann.label)+'</text>';}
+                        return '<line x1="'+lx1+'" y1="'+ly1+'" x2="'+lx2+'" y2="'+ly2+'" stroke="#ef4444" stroke-width="0.5"/>'+
+                               '<polygon points="'+p2+'" fill="#ef4444"/>'+
+                               (p1?'<polygon points="'+p1+'" fill="#ef4444"/>':'')+lbl;
+                      }
+                      if(ann.type==='text'){var tw2=ann.text.length*2.4+4,bh2=5.5,cx2=ann.x+tw2/2;
+                        return '<rect x="'+ann.x+'" y="'+(ann.y-bh2/2)+'" width="'+tw2+'" height="'+bh2+'" rx="1.5" fill="rgba(50,50,50,0.85)"/>'+
+                               '<text x="'+cx2+'" y="'+ann.y+'" text-anchor="middle" dominant-baseline="central" font-size="3.5" font-weight="bold" font-family="Arial" fill="#ef4444">'+escapeHtml(ann.text)+'</text>';}
+                      return '';
+                    }).join('');
+                    annSvg='<svg viewBox="0 0 100 100" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none">'+svgParts+'</svg>';
+                  }
+                  return '<div style="position:relative;width:'+THUMB_W+'px;height:'+THUMB_H+'px;flex-shrink:0">'+
+                    '<img src="'+(img.imagePreviewUrl||'')+'" style="width:100%;height:100%;object-fit:cover;border-radius:4px;border:1px solid #e5e7eb;display:block"/>'+
+                    annSvg+'</div>';
+                }())+
                 '<table style="border-collapse:collapse;width:100%;table-layout:fixed;vertical-align:top">' +
                   '<col style="width:' + LABEL_W + 'px" /><col />' +
                   infoRows2 +
@@ -3948,18 +3976,23 @@
       const inlineRef   = React.useRef(null);
       const annsRef     = React.useRef(anns); annsRef.current = anns;
       const lastTapRef  = React.useRef({time:0,id:null});
-      // P33: Prevent swipe-back — attach to document so browser nav gesture is blocked
+      // P34: Push dummy history state → intercept popstate (swipe-back)
+      const isDirtyRef = React.useRef(false);
       React.useEffect(function(){
-        function noScroll(e){
-          if(e.touches && e.touches.length===1) e.preventDefault();
+        isDirtyRef.current = (JSON.stringify(anns) !== JSON.stringify(initialAnnotations||[]));
+      });
+      React.useEffect(function(){
+        window.history.pushState({annEditor:true},'');
+        function onPop(){
+          window.history.pushState({annEditor:true},'');
+          if(isDirtyRef.current){ setShowExit(true); } else { onCancel(); }
         }
-        document.addEventListener("touchstart", noScroll, {passive:false});
-        document.addEventListener("touchmove",  noScroll, {passive:false});
-        document.body.style.overscrollBehavior = 'none';
+        window.addEventListener('popstate', onPop);
+        function noScroll(e){ if(e.touches&&e.touches.length===1) e.preventDefault(); }
+        document.addEventListener("touchmove", noScroll, {passive:false});
         return function(){
-          document.removeEventListener("touchstart", noScroll);
-          document.removeEventListener("touchmove",  noScroll);
-          document.body.style.overscrollBehavior = '';
+          window.removeEventListener('popstate', onPop);
+          document.removeEventListener("touchmove", noScroll);
         };
       }, []);
       // P32: compute actual image rect within wrap
@@ -4059,7 +4092,7 @@
         }
         setSelId(null);
         lastTapRef.current={time:0,id:null};
-        if(tool==='arrow'){setDS(pt);setDC(pt);}
+        if(tool==='arrow'||tool==='arrowLabel'){setDS(pt);setDC(pt);}
         else if(tool==='text'){openInline({x:pt.x,y:pt.y,sx:pt.sx,sy:pt.sy},'',null);}
       }
       function onMove(e){
@@ -4096,7 +4129,14 @@
         var dx=pt.x-drawStart.x,dy=pt.y-drawStart.y;
         if(Math.sqrt(dx*dx+dy*dy)>2){
           var id=Date.now().toString(36)+Math.random().toString(36).slice(2,5);
-          setAnns(function(p){return p.concat([{id,type:'arrow',x1:drawStart.x,y1:drawStart.y,x2:pt.x,y2:pt.y,twoHeads:true}]);});
+          var newAnn={id,type:'arrow',x1:drawStart.x,y1:drawStart.y,x2:pt.x,y2:pt.y,twoHeads:true};
+          setAnns(function(p){return p.concat([newAnn]);});
+          if(tool==='arrowLabel'){
+            var mx=(drawStart.x+pt.x)/2, my=(drawStart.y+pt.y)/2;
+            var svgEl=svgRef.current; var r=svgEl?svgEl.getBoundingClientRect():{left:0,top:0,width:1,height:1};
+            setIP({x:mx,y:my,sx:r.left+mx/100*r.width,sy:r.top+my/100*r.height});
+            setIV(''); setEId(id+'_label');
+          }
         }
         setDS(null);setDC(null);
       }
@@ -4108,10 +4148,10 @@
       var hint = rotState ? '🔄 Đang xoay — nhấc ngón tay để dừng' :
                  dragId   ? '✥ Đang di chuyển...' :
                  inlinePos? 'Nhập xong → Enter hoặc bấm ra ngoài' :
-                 tool==='arrow'
+                 (tool==='arrow'||tool==='arrowLabel')
                    ? (selAnn_&&selAnn_.type==='arrow'
                        ? 'Bấm đầu mũi để xoay • Bấm giữa để kéo • 🗑 xóa'
-                       : 'Kéo để vẽ mũi tên')
+                       : (tool==='arrowLabel'?'Kéo để vẽ mũi tên có nhãn':'Kéo để vẽ mũi tên'))
                    : 'Bấm để đặt • Kéo để di chuyển • Chạm 2× để sửa';
       return (
         <div className="ann-editor-overlay" ref={overlayRef}>
@@ -4163,6 +4203,11 @@
                     </>}
                     {/* spinning dot highlight */}
                     {rotDot&&<circle cx={rotDot.cx} cy={rotDot.cy} r="2.8" fill="#ff8800" stroke="#fff" strokeWidth="0.5"/>}
+                    {/* label at midpoint */}
+                    {ann.label&&(function(){var mx=(ann.x1+ann.x2)/2,my=(ann.y1+ann.y2)/2;var ltw=ann.label.length*2.4+4,lbh=5.5;return(<g>
+                      <rect x={mx-ltw/2} y={my-lbh/2} width={ltw} height={lbh} rx="1.5" ry="1.5" fill={sel?'rgba(255,136,0,0.85)':'rgba(50,50,50,0.85)'}/>
+                      <text x={mx} y={my} textAnchor="middle" dominantBaseline="central" fontSize="3.5" fontWeight="bold" fontFamily="Arial" fill={sel?'#fff':'#ef4444'}>{ann.label}</text>
+                    </g>);}())}
                   </g>);
                 }
                 if(ann.type==='text'){
@@ -4224,6 +4269,14 @@
               onClick={function(){setTool('arrow');setSelId(null);}}>↔</button>
             <button style={{
                 flex:1,padding:'9px 0',borderRadius:8,border:'1.5px solid var(--border)',
+                background:tool==='arrowLabel'?'var(--primary)':'var(--bg-card)',
+                color:tool==='arrowLabel'?'#fff':'var(--text)',fontSize:15,cursor:'pointer',lineHeight:1,
+              }}
+              onClick={function(){setTool('arrowLabel');setSelId(null);}}>
+              ↔<sup style={{fontSize:'0.55em',fontWeight:'bold'}}>T</sup>
+            </button>
+            <button style={{
+                flex:1,padding:'9px 0',borderRadius:8,border:'1.5px solid var(--border)',
                 background:tool==='text'?'var(--primary)':'var(--bg-card)',
                 color:tool==='text'?'#fff':'var(--text)',
                 fontSize:16,fontWeight:'bold',fontFamily:'Arial',cursor:'pointer',lineHeight:1,
@@ -4256,7 +4309,7 @@
       const replaceInputRef = React.useRef(null);
       const [annotations, setAnnotations] = useState([]);
       const [annEditorOpen, setAnnEditorOpen] = useState(false);
-      const [collSections, setCollSections]   = useState(new Set());
+      const [collSections, setCollSections]   = useState(new Set(['viTri','loaiRem','quyCach']));
       const [roImgOff, setRoImgOff] = useState({x:0,y:0,w:100,h:100}); // P32: readonly SVG offset
       const roImgRef = React.useRef(null);
       function computeRoOff(){
@@ -4492,6 +4545,10 @@
                       <line x1={lx1} y1={ly1} x2={lx2} y2={ly2} stroke="#ef4444" strokeWidth="0.5"/>
                       <polygon points={p2} fill="#ef4444"/>
                       {p1&&<polygon points={p1} fill="#ef4444"/>}
+                      {ann.label&&(function(){const mx=(ann.x1+ann.x2)/2,my=(ann.y1+ann.y2)/2,ltw=ann.label.length*2.4+4,lbh=5.5;return(<g>
+                        <rect x={mx-ltw/2} y={my-lbh/2} width={ltw} height={lbh} rx="1.5" ry="1.5" fill="rgba(50,50,50,0.85)"/>
+                        <text x={mx} y={my} textAnchor="middle" dominantBaseline="central" fontSize="3.5" fontWeight="bold" fontFamily="Arial" fill="#ef4444">{ann.label}</text>
+                      </g>);}())}
                     </g>);
                   }
                   if (ann.type==='text') {
