@@ -1585,7 +1585,7 @@
     // =============================================
     // STORAGE UTILS
     // =============================================
-    const APP_PROMPT_VERSION = 'P43'; // Cập nhật khi lên version mới
+    const APP_PROMPT_VERSION = 'P44'; // Cập nhật khi lên version mới
     const STORAGE_KEY = 'mrcurtain_survey_projects';
     const STORAGE_KEY_LEGACY = 'mrcurtain_projects'; // key cũ từ Prompt 2
     // Khai báo sớm để runDataMigration() dùng được (Prompt 14.2)
@@ -3997,12 +3997,11 @@
       React.useEffect(function(){
         isDirtyRef.current = (JSON.stringify(anns) !== JSON.stringify(initialAnnotations||[]));
       });
-      // P43: push 5 history entries as buffer — Android system gesture must fire 5× to exit
+      // P44: push 20 history entries as buffer — Android system gesture must fire 20× to exit
       React.useEffect(function(){
-        for(var i=0;i<5;i++) history.pushState({annEditor:true,i:i}, '');
+        for(var i=0;i<20;i++) history.pushState({annEditor:true,i:i}, '');
         function onPop(){
-          // Re-push 5 more entries to replenish buffer
-          for(var j=0;j<5;j++) history.pushState({annEditor:true,j:j}, '');
+          for(var j=0;j<20;j++) history.pushState({annEditor:true,j:j}, '');
           if(isDirtyRef.current){ setShowExit(true); }
         }
         window.addEventListener('popstate', onPop);
@@ -5961,12 +5960,14 @@
           container.innerHTML = buildReportHTML(project, activeImages, { singlePage: layout === 'single' }, sttList, themeHex);
           document.body.appendChild(container);
 
-          /* Chờ ảnh load */
+          /* Chờ ảnh load — P44: timeout 4s mỗi ảnh tránh treo */
           const imgEls = container.querySelectorAll('img');
           await Promise.all(Array.from(imgEls).map(el =>
             new Promise(resolve => {
-              if (el.complete) resolve();
-              else { el.onload = resolve; el.onerror = resolve; }
+              if (el.complete) { resolve(); return; }
+              var t = setTimeout(resolve, 4000);
+              el.onload  = function(){ clearTimeout(t); resolve(); };
+              el.onerror = function(){ clearTimeout(t); resolve(); };
             })
           ));
 
@@ -5979,11 +5980,15 @@
             return { top, bottom: top + card.offsetHeight };
           });
 
-          /* Chụp toàn bộ — scale thấp hơn trên mobile để không bị treo */
-          const SCALE = window.innerWidth < 768 ? 1.0 : 2;
-          const canvas = await html2canvas(container, {
-            scale: SCALE, useCORS: true, allowTaint: true, backgroundColor: '#ffffff'
-          });
+          /* P44: scale thấp trên mobile tránh treo, timeout 90s */
+          const SCALE = window.innerWidth < 768 ? 0.75 : 2;
+          const canvas = await Promise.race([
+            html2canvas(container, {
+              scale: SCALE, useCORS: true, allowTaint: true, backgroundColor: '#ffffff',
+              logging: false,
+            }),
+            new Promise(function(_, rej){ setTimeout(function(){ rej(new Error('html2canvas timeout')); }, 90000); })
+          ]);
           document.body.removeChild(container);
 
           /* ── Xuất ảnh báo cáo (.png) ── */
@@ -7085,11 +7090,3 @@
           onOpenTrash={() => goTo("trash")}
         />
       );
-    }
-
-    // ── Mount ─────────────────────────────────────────────────
-    const rootEl = document.getElementById("root");
-    ReactDOM.createRoot(rootEl).render(<App />);
-  </script>
-</body>
-</html>
