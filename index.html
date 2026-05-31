@@ -1585,7 +1585,7 @@
     // =============================================
     // STORAGE UTILS
     // =============================================
-    const APP_PROMPT_VERSION = 'P39'; // Cập nhật khi lên version mới
+    const APP_PROMPT_VERSION = 'P40'; // Cập nhật khi lên version mới
     const STORAGE_KEY = 'mrcurtain_survey_projects';
     const STORAGE_KEY_LEGACY = 'mrcurtain_projects'; // key cũ từ Prompt 2
     // Khai báo sớm để runDataMigration() dùng được (Prompt 14.2)
@@ -3991,21 +3991,36 @@
       const inlineRef   = React.useRef(null);
       const annsRef     = React.useRef(anns); annsRef.current = anns;
       const lastTapRef  = React.useRef({time:0,id:null});
-      // P38: Block swipe-back only within overlay
+      // P40: history.pushState to intercept browser back gesture
       const isDirtyRef = React.useRef(false);
       React.useEffect(function(){
         isDirtyRef.current = (JSON.stringify(anns) !== JSON.stringify(initialAnnotations||[]));
       });
       React.useEffect(function(){
-        var el = overlayRef.current; if(!el) return;
-        // Block all touch navigation gestures within annotation editor
-        function blockAll(e){ e.preventDefault(); }
-        el.addEventListener('touchstart', blockAll, {passive:false});
-        el.addEventListener('touchmove',  blockAll, {passive:false});
+        // Push a fake history entry so swipe-back triggers popstate instead of real navigation
+        history.pushState({annEditor:true}, '');
+        function onPop(e){
+          // Browser back gesture fired — intercept
+          if(isDirtyRef.current){
+            // Re-push so we stay on same "page", then show save dialog
+            history.pushState({annEditor:true}, '');
+            setShowExit(true);
+          } else {
+            onCancel();
+          }
+        }
+        window.addEventListener('popstate', onPop);
         return function(){
-          el.removeEventListener('touchstart', blockAll);
-          el.removeEventListener('touchmove',  blockAll);
+          window.removeEventListener('popstate', onPop);
         };
+      }, []);
+      // P40: block touchmove on image-wrap only to prevent scroll while drawing
+      const imgWrapRef = React.useRef(null);
+      React.useEffect(function(){
+        var el = imgWrapRef.current; if(!el) return;
+        function blockMove(e){ e.preventDefault(); }
+        el.addEventListener('touchmove', blockMove, {passive:false});
+        return function(){ el.removeEventListener('touchmove', blockMove); };
       }, []);
       // P32: compute actual image rect within wrap
       function computeImgOff(){
@@ -4186,7 +4201,7 @@
               </div>
             </div>
           )}
-          <div className="ann-editor-img-wrap">
+          <div className="ann-editor-img-wrap" ref={imgWrapRef}>
             <img ref={imgRef} src={imageUrl} className="ann-editor-img" draggable={false}
               onLoad={computeImgOff}/>
             <svg ref={svgRef} className="ann-svg-overlay" viewBox="0 0 100 100" preserveAspectRatio="none"
@@ -7060,21 +7075,4 @@
         return <SettingsScreen onBack={handleBack} />;
       }
 
-      // Mặc định: màn hình danh sách công trình
-      return (
-        <ProjectList
-          onCreateNew={() => goTo("create")}
-          onSelectProject={projId => goTo("detail", projId)}
-          onOpenTagManager={() => goTo("tag-manager")}
-          onOpenSettings={() => goTo("settings")}
-          onOpenTrash={() => goTo("trash")}
-        />
-      );
-    }
-
-    // ── Mount ─────────────────────────────────────────────────
-    const rootEl = document.getElementById("root");
-    ReactDOM.createRoot(rootEl).render(<App />);
-  </script>
-</body>
-</html>
+      // Mặc định: màn hình danh sách công trìn
