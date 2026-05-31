@@ -1585,7 +1585,7 @@
     // =============================================
     // STORAGE UTILS
     // =============================================
-    const APP_PROMPT_VERSION = 'P35'; // Cập nhật khi lên version mới
+    const APP_PROMPT_VERSION = 'P36'; // Cập nhật khi lên version mới
     const STORAGE_KEY = 'mrcurtain_survey_projects';
     const STORAGE_KEY_LEGACY = 'mrcurtain_projects'; // key cũ từ Prompt 2
     // Khai báo sớm để runDataMigration() dùng được (Prompt 14.2)
@@ -3967,6 +3967,7 @@
       const [editingId, setEId]   = useState(null);
       // P32: save/discard dialog
       const [showExit, setShowExit] = useState(false);
+      const [pendingLabelId, setPLId] = useState(null);
       // P32: image offset within wrap (for SVG coord sync)
       const [imgOff, setImgOff]   = useState({x:0,y:0,w:100,h:100}); // % of wrap
       const svgRef      = React.useRef(null);
@@ -4041,6 +4042,11 @@
       }
       function confirmText(){
         var val=inlineVal.trim();
+        if(pendingLabelId){
+          if(val) setAnns(function(p){return p.map(function(a){return a.id===pendingLabelId?{...a,label:val}:a;});});
+          setPLId(null); setIP(null); setIV(''); setEId(null);
+          return;
+        }
         if(inlinePos&&val){
           if(editingId){
             setAnns(function(p){return p.map(function(a){return a.id===editingId?{...a,text:val}:a;});});
@@ -4135,7 +4141,7 @@
             var mx=(drawStart.x+pt.x)/2, my=(drawStart.y+pt.y)/2;
             var svgEl=svgRef.current; var r=svgEl?svgEl.getBoundingClientRect():{left:0,top:0,width:1,height:1};
             setIP({x:mx,y:my,sx:r.left+mx/100*r.width,sy:r.top+my/100*r.height});
-            setIV(''); setEId(id+'_label');
+            setIV(''); setPLId(id);
           }
         }
         setDS(null);setDC(null);
@@ -4204,10 +4210,10 @@
                     {/* spinning dot highlight */}
                     {rotDot&&<circle cx={rotDot.cx} cy={rotDot.cy} r="2.8" fill="#ff8800" stroke="#fff" strokeWidth="0.5"/>}
                     {/* label at midpoint */}
-                    {ann.label ? (function(mx,my,ltw,lbh){return(<g>
-                      <rect x={mx-ltw/2} y={my-lbh/2} width={ltw} height={lbh} rx="1.5" ry="1.5" fill={sel?'rgba(255,136,0,0.85)':'rgba(50,50,50,0.85)'}/>
-                      <text x={mx} y={my} textAnchor="middle" dominantBaseline="central" fontSize="3.5" fontWeight="bold" fontFamily="Arial" fill={sel?'#fff':'#ef4444'}>{ann.label}</text>
-                    </g>);}((ann.x1+ann.x2)/2,(ann.y1+ann.y2)/2,ann.label.length*2.4+4,5.5)) : null}
+                    {ann.label && <g>
+                      <rect x={(ann.x1+ann.x2)/2-(ann.label.length*2.4+4)/2} y={(ann.y1+ann.y2)/2-2.75} width={ann.label.length*2.4+4} height={5.5} rx="1.5" ry="1.5" fill={sel?'rgba(255,136,0,0.85)':'rgba(50,50,50,0.85)'}/>
+                      <text x={(ann.x1+ann.x2)/2} y={(ann.y1+ann.y2)/2} textAnchor="middle" dominantBaseline="central" fontSize="3.5" fontWeight="bold" fontFamily="Arial" fill={sel?'#fff':'#ef4444'}>{ann.label}</text>
+                    </g>}
                   </g>);
                 }
                 if(ann.type==='text'){
@@ -4309,7 +4315,7 @@
       const replaceInputRef = React.useRef(null);
       const [annotations, setAnnotations] = useState([]);
       const [annEditorOpen, setAnnEditorOpen] = useState(false);
-      const [collSections, setCollSections]   = useState(new Set(['viTri','loaiRem','quyCach']));
+      const [collSections, setCollSections]   = useState(new Set(['viTri','loaiRem','quyCach','luuY_tags']));
       const [roImgOff, setRoImgOff] = useState({x:0,y:0,w:100,h:100}); // P32: readonly SVG offset
       const roImgRef = React.useRef(null);
       function computeRoOff(){
@@ -4545,10 +4551,10 @@
                       <line x1={lx1} y1={ly1} x2={lx2} y2={ly2} stroke="#ef4444" strokeWidth="0.5"/>
                       <polygon points={p2} fill="#ef4444"/>
                       {p1&&<polygon points={p1} fill="#ef4444"/>}
-                      {ann.label ? (function(mx,my,ltw,lbh){return(<g>
-                        <rect x={mx-ltw/2} y={my-lbh/2} width={ltw} height={lbh} rx="1.5" ry="1.5" fill="rgba(50,50,50,0.85)"/>
-                        <text x={mx} y={my} textAnchor="middle" dominantBaseline="central" fontSize="3.5" fontWeight="bold" fontFamily="Arial" fill="#ef4444">{ann.label}</text>
-                      </g>);}((ann.x1+ann.x2)/2,(ann.y1+ann.y2)/2,ann.label.length*2.4+4,5.5)) : null}
+                      {ann.label && <g>
+                        <rect x={(ann.x1+ann.x2)/2-(ann.label.length*2.4+4)/2} y={(ann.y1+ann.y2)/2-2.75} width={ann.label.length*2.4+4} height={5.5} rx="1.5" ry="1.5" fill="rgba(50,50,50,0.85)"/>
+                        <text x={(ann.x1+ann.x2)/2} y={(ann.y1+ann.y2)/2} textAnchor="middle" dominantBaseline="central" fontSize="3.5" fontWeight="bold" fontFamily="Arial" fill="#ef4444">{ann.label}</text>
+                      </g>}
                     </g>);
                   }
                   if (ann.type==='text') {
