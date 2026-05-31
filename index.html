@@ -1585,7 +1585,7 @@
     // =============================================
     // STORAGE UTILS
     // =============================================
-    const APP_PROMPT_VERSION = 'P45'; // Cập nhật khi lên version mới
+    const APP_PROMPT_VERSION = 'P46'; // Cập nhật khi lên version mới
     const STORAGE_KEY = 'mrcurtain_survey_projects';
     const STORAGE_KEY_LEGACY = 'mrcurtain_projects'; // key cũ từ Prompt 2
     // Khai báo sớm để runDataMigration() dùng được (Prompt 14.2)
@@ -3997,15 +3997,30 @@
       React.useEffect(function(){
         isDirtyRef.current = (JSON.stringify(anns) !== JSON.stringify(initialAnnotations||[]));
       });
-      // P44: push 20 history entries as buffer — Android system gesture must fire 20× to exit
+      // P46: chặn back gesture bằng Navigation API (Chrome 102+), fallback pushState
       React.useEffect(function(){
-        for(var i=0;i<20;i++) history.pushState({annEditor:true,i:i}, '');
-        function onPop(){
-          for(var j=0;j<20;j++) history.pushState({annEditor:true,j:j}, '');
-          if(isDirtyRef.current){ setShowExit(true); }
+        var cleanup = null;
+        if(window.navigation){
+          // Navigation API — cancel traverse (back gesture) trực tiếp
+          function onNav(e){
+            if(e.navigationType==='traverse'){
+              e.preventDefault();
+              if(isDirtyRef.current){ setShowExit(true); }
+            }
+          }
+          window.navigation.addEventListener('navigate', onNav);
+          cleanup = function(){ window.navigation.removeEventListener('navigate', onNav); };
+        } else {
+          // Fallback: pushState buffer 50 entries
+          for(var i=0;i<50;i++) history.pushState({annEditor:true,i:i}, '');
+          function onPop(){
+            for(var j=0;j<50;j++) history.pushState({annEditor:true,j:j}, '');
+            if(isDirtyRef.current){ setShowExit(true); }
+          }
+          window.addEventListener('popstate', onPop);
+          cleanup = function(){ window.removeEventListener('popstate', onPop); };
         }
-        window.addEventListener('popstate', onPop);
-        return function(){ window.removeEventListener('popstate', onPop); };
+        return function(){ if(cleanup) cleanup(); };
       }, []);
       // P41: block touch on img-wrap (drawing area) only — toolbar buttons unaffected
       React.useEffect(function(){
