@@ -1585,7 +1585,7 @@
     // =============================================
     // STORAGE UTILS
     // =============================================
-    const APP_PROMPT_VERSION = 'P36'; // Cập nhật khi lên version mới
+    const APP_PROMPT_VERSION = 'P37'; // Cập nhật khi lên version mới
     const STORAGE_KEY = 'mrcurtain_survey_projects';
     const STORAGE_KEY_LEGACY = 'mrcurtain_projects'; // key cũ từ Prompt 2
     // Khai báo sớm để runDataMigration() dùng được (Prompt 14.2)
@@ -3977,23 +3977,26 @@
       const inlineRef   = React.useRef(null);
       const annsRef     = React.useRef(anns); annsRef.current = anns;
       const lastTapRef  = React.useRef({time:0,id:null});
-      // P34: Push dummy history state → intercept popstate (swipe-back)
+      // P37: Block edge swipe-back + all touchmove
       const isDirtyRef = React.useRef(false);
       React.useEffect(function(){
         isDirtyRef.current = (JSON.stringify(anns) !== JSON.stringify(initialAnnotations||[]));
       });
       React.useEffect(function(){
-        window.history.pushState({annEditor:true},'');
-        function onPop(){
-          window.history.pushState({annEditor:true},'');
-          if(isDirtyRef.current){ setShowExit(true); } else { onCancel(); }
+        // Block horizontal edge swipe (iOS swipe-back from left edge)
+        function blockEdge(e){
+          e.preventDefault();
         }
-        window.addEventListener('popstate', onPop);
-        function noScroll(e){ e.preventDefault(); }
-        document.addEventListener("touchmove", noScroll, {passive:false});
+        function blockEdgeStart(e){
+          if(e.touches && e.touches[0] && e.touches[0].clientX < 30){
+            e.preventDefault();
+          }
+        }
+        document.addEventListener('touchstart', blockEdgeStart, {passive:false});
+        document.addEventListener('touchmove',  blockEdge,      {passive:false});
         return function(){
-          window.removeEventListener('popstate', onPop);
-          document.removeEventListener("touchmove", noScroll);
+          document.removeEventListener('touchstart', blockEdgeStart);
+          document.removeEventListener('touchmove',  blockEdge);
         };
       }, []);
       // P32: compute actual image rect within wrap
@@ -4038,7 +4041,7 @@
       }
       function openInline(pos,val,editId){
         setIP(pos); setIV(val||''); setEId(editId||null);
-        setTimeout(function(){if(inlineRef.current){inlineRef.current.focus();inlineRef.current.select();}},30);
+        setTimeout(function(){if(inlineRef.current){inlineRef.current.select();}},50);
       }
       function confirmText(){
         var val=inlineVal.trim();
@@ -4234,25 +4237,34 @@
               {drawStart&&drawCur&&<line x1={drawStart.x} y1={drawStart.y} x2={drawCur.x} y2={drawCur.y}
                 stroke="#ef4444" strokeWidth="0.5" strokeDasharray="2,1.5"/>}
             </svg>
-            {inlinePos&&(
-              <div style={{position:'fixed',left:inlinePos.sx,top:inlinePos.sy,
-                transform:'translate(-50%,-130%)',zIndex:400,pointerEvents:'auto'}}>
+            {(inlinePos||pendingLabelId)&&(
+              <div style={{position:'fixed',bottom:0,left:0,right:0,zIndex:500,
+                background:'var(--bg-card)',borderTop:'1px solid var(--border)',
+                padding:'12px 16px',display:'flex',gap:8,alignItems:'center',
+                boxShadow:'0 -4px 20px rgba(0,0,0,0.4)'}}>
                 <input ref={inlineRef} value={inlineVal}
                   onChange={function(e){setIV(e.target.value);}}
                   onKeyDown={function(e){
                     if(e.key==='Enter'){e.preventDefault();confirmText();}
-                    if(e.key==='Escape'){setIP(null);setIV('');setEId(null);}
+                    if(e.key==='Escape'){setIP(null);setIV('');setEId(null);setPLId(null);}
                   }}
-                  onBlur={confirmText}
                   style={{
-                    background:'rgba(20,20,20,0.92)',color:'#ef4444',
-                    border:'1.5px solid rgba(239,68,68,0.6)',borderRadius:8,
-                    padding:'6px 14px',fontSize:17,fontFamily:'Arial',
-                    fontWeight:'bold',outline:'none',minWidth:90,textAlign:'center',
-                    boxShadow:'0 2px 12px rgba(0,0,0,0.5)',
+                    flex:1,background:'var(--bg)',color:'var(--text)',
+                    border:'1.5px solid var(--border)',borderRadius:8,
+                    padding:'10px 14px',fontSize:16,fontFamily:'Arial',
+                    fontWeight:'bold',outline:'none',textAlign:'left',
                   }}
-                  placeholder="..."
+                  placeholder="Nhập nội dung..."
+                  autoFocus
                 />
+                <button className="btn btn-secondary" style={{padding:'10px 14px',fontSize:14}}
+                  onClick={function(){setIP(null);setIV('');setEId(null);setPLId(null);}}>
+                  Bỏ
+                </button>
+                <button className="btn btn-primary" style={{padding:'10px 16px',fontSize:14}}
+                  onClick={confirmText}>
+                  OK
+                </button>
               </div>
             )}
           </div>
@@ -4292,7 +4304,7 @@
             </button>
             {selAnn_&&selAnn_.type==='arrow'&&(
               <button className="btn btn-secondary" style={{flex:1.5}} onClick={toggleHeads}>
-                {selAnn_.twoHeads?'→ 1 đầu':'↔ 2 đầu'}
+                {selAnn_.twoHeads?'→':'↔'}
               </button>
             )}
             {selId&&<button className="btn btn-secondary" style={{flex:1,color:'var(--danger)'}} onClick={delSel}>🗑</button>}
