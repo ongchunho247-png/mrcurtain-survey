@@ -1585,7 +1585,7 @@
     // =============================================
     // STORAGE UTILS
     // =============================================
-    const APP_PROMPT_VERSION = 'P38'; // Cập nhật khi lên version mới
+    const APP_PROMPT_VERSION = 'P39'; // Cập nhật khi lên version mới
     const STORAGE_KEY = 'mrcurtain_survey_projects';
     const STORAGE_KEY_LEGACY = 'mrcurtain_projects'; // key cũ từ Prompt 2
     // Khai báo sớm để runDataMigration() dùng được (Prompt 14.2)
@@ -3075,7 +3075,7 @@
                     var lfsx=Math.round(aFontSz);
                     ctx.save(); ctx.translate(lmxC,lmyC); ctx.rotate(angR);
                     ctx.font='bold '+lfsx+'px Arial';
-                    var ltw2=ctx.measureText(ann.label).width,lpad=lfsx*0.3,lbh2=lfsx*1.4,lgap=aHeadSz*0.6;
+                    var ltw2=ctx.measureText(ann.label).width,lpad=lfsx*0.3,lbh2=lfsx*1.4,lgap=lfsx*0.25;
                     ctx.fillStyle='rgba(50,50,50,0.85)';
                     ctx.beginPath(); ctx.roundRect(-ltw2/2-lpad,-lgap-lbh2,ltw2+lpad*2,lbh2,3); ctx.fill();
                     ctx.fillStyle='#ef4444'; ctx.textAlign='center'; ctx.textBaseline='middle';
@@ -3998,15 +3998,13 @@
       });
       React.useEffect(function(){
         var el = overlayRef.current; if(!el) return;
-        function blockEdge(e){ e.preventDefault(); }
-        function blockEdgeStart(e){
-          if(e.touches && e.touches[0] && e.touches[0].clientX < 30) e.preventDefault();
-        }
-        el.addEventListener('touchstart', blockEdgeStart, {passive:false});
-        el.addEventListener('touchmove',  blockEdge,      {passive:false});
+        // Block all touch navigation gestures within annotation editor
+        function blockAll(e){ e.preventDefault(); }
+        el.addEventListener('touchstart', blockAll, {passive:false});
+        el.addEventListener('touchmove',  blockAll, {passive:false});
         return function(){
-          el.removeEventListener('touchstart', blockEdgeStart);
-          el.removeEventListener('touchmove',  blockEdge);
+          el.removeEventListener('touchstart', blockAll);
+          el.removeEventListener('touchmove',  blockAll);
         };
       }, []);
       // P32: compute actual image rect within wrap
@@ -4223,7 +4221,7 @@
                     {/* spinning dot highlight */}
                     {rotDot&&<circle cx={rotDot.cx} cy={rotDot.cy} r="2.8" fill="#ff8800" stroke="#fff" strokeWidth="0.5"/>}
                     {/* label at midpoint */}
-                    {ann.label&&(function(){var mx2=(ann.x1+ann.x2)/2,my2=(ann.y1+ann.y2)/2,dx2=ann.x2-ann.x1,dy2=ann.y2-ann.y1,ltw2=ann.label.length*2.4+4,lbh2=5.5,gap2=4;
+                    {ann.label&&(function(){var mx2=(ann.x1+ann.x2)/2,my2=(ann.y1+ann.y2)/2,dx2=ann.x2-ann.x1,dy2=ann.y2-ann.y1,ltw2=ann.label.length*2.4+4,lbh2=5.5,gap2=2;
                       var deg=Math.atan2(dy2,dx2)*180/Math.PI; if(deg>90)deg-=180; if(deg<-90)deg+=180;
                       return <g transform={'rotate('+deg+','+mx2+','+my2+')'}>
                         <rect x={mx2-ltw2/2} y={my2-gap2-lbh2} width={ltw2} height={lbh2} rx="1.5" ry="1.5" fill={sel?'rgba(255,136,0,0.85)':'rgba(50,50,50,0.85)'}/>
@@ -4565,7 +4563,7 @@
                       <line x1={lx1} y1={ly1} x2={lx2} y2={ly2} stroke="#ef4444" strokeWidth="0.5"/>
                       <polygon points={p2} fill="#ef4444"/>
                       {p1&&<polygon points={p1} fill="#ef4444"/>}
-                      {ann.label&&(function(){const mx2=(ann.x1+ann.x2)/2,my2=(ann.y1+ann.y2)/2,dx2=ann.x2-ann.x1,dy2=ann.y2-ann.y1,ltw2=ann.label.length*2.4+4,lbh2=5.5,gap2=4;
+                      {ann.label&&(function(){const mx2=(ann.x1+ann.x2)/2,my2=(ann.y1+ann.y2)/2,dx2=ann.x2-ann.x1,dy2=ann.y2-ann.y1,ltw2=ann.label.length*2.4+4,lbh2=5.5,gap2=2;
                         var deg=Math.atan2(dy2,dx2)*180/Math.PI; if(deg>90)deg-=180; if(deg<-90)deg+=180;
                         return <g transform={'rotate('+deg+','+mx2+','+my2+')'}>
                           <rect x={mx2-ltw2/2} y={my2-gap2-lbh2} width={ltw2} height={lbh2} rx="1.5" ry="1.5" fill="rgba(50,50,50,0.85)"/>
@@ -4912,8 +4910,8 @@
                       {ann.label&&(function(){var dx3=ann.x2-ann.x1,dy3=ann.y2-ann.y1,deg3=Math.atan2(dy3,dx3)*180/Math.PI;
                         if(deg3>90)deg3-=180; if(deg3<-90)deg3+=180;
                         return <g transform={'rotate('+deg3+','+lmx+','+lmy+')'}>
-                          <rect x={lmx-lltw/2} y={lmy-4-5.5} width={lltw} height={5.5} rx="1.5" ry="1.5" fill="rgba(50,50,50,0.85)"/>
-                          <text x={lmx} y={lmy-6.75} textAnchor="middle" dominantBaseline="central" fontSize="3.5" fontWeight="bold" fontFamily="Arial" fill="#ef4444">{ann.label}</text>
+                          <rect x={lmx-lltw/2} y={lmy-2-5.5} width={lltw} height={5.5} rx="1.5" ry="1.5" fill="rgba(50,50,50,0.85)"/>
+                          <text x={lmx} y={lmy-4.75} textAnchor="middle" dominantBaseline="central" fontSize="3.5" fontWeight="bold" fontFamily="Arial" fill="#ef4444">{ann.label}</text>
                         </g>;
                       }())}
                     </g>);
