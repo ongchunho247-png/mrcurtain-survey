@@ -1585,7 +1585,7 @@
     // =============================================
     // STORAGE UTILS
     // =============================================
-    const APP_PROMPT_VERSION = 'P34'; // Cập nhật khi lên version mới
+    const APP_PROMPT_VERSION = 'P35'; // Cập nhật khi lên version mới
     const STORAGE_KEY = 'mrcurtain_survey_projects';
     const STORAGE_KEY_LEGACY = 'mrcurtain_projects'; // key cũ từ Prompt 2
     // Khai báo sớm để runDataMigration() dùng được (Prompt 14.2)
@@ -3988,7 +3988,7 @@
           if(isDirtyRef.current){ setShowExit(true); } else { onCancel(); }
         }
         window.addEventListener('popstate', onPop);
-        function noScroll(e){ if(e.touches&&e.touches.length===1) e.preventDefault(); }
+        function noScroll(e){ e.preventDefault(); }
         document.addEventListener("touchmove", noScroll, {passive:false});
         return function(){
           window.removeEventListener('popstate', onPop);
@@ -4204,10 +4204,10 @@
                     {/* spinning dot highlight */}
                     {rotDot&&<circle cx={rotDot.cx} cy={rotDot.cy} r="2.8" fill="#ff8800" stroke="#fff" strokeWidth="0.5"/>}
                     {/* label at midpoint */}
-                    {ann.label&&(function(){var mx=(ann.x1+ann.x2)/2,my=(ann.y1+ann.y2)/2;var ltw=ann.label.length*2.4+4,lbh=5.5;return(<g>
+                    {ann.label ? (function(mx,my,ltw,lbh){return(<g>
                       <rect x={mx-ltw/2} y={my-lbh/2} width={ltw} height={lbh} rx="1.5" ry="1.5" fill={sel?'rgba(255,136,0,0.85)':'rgba(50,50,50,0.85)'}/>
                       <text x={mx} y={my} textAnchor="middle" dominantBaseline="central" fontSize="3.5" fontWeight="bold" fontFamily="Arial" fill={sel?'#fff':'#ef4444'}>{ann.label}</text>
-                    </g>);}())}
+                    </g>);}((ann.x1+ann.x2)/2,(ann.y1+ann.y2)/2,ann.label.length*2.4+4,5.5)) : null}
                   </g>);
                 }
                 if(ann.type==='text'){
@@ -4545,10 +4545,10 @@
                       <line x1={lx1} y1={ly1} x2={lx2} y2={ly2} stroke="#ef4444" strokeWidth="0.5"/>
                       <polygon points={p2} fill="#ef4444"/>
                       {p1&&<polygon points={p1} fill="#ef4444"/>}
-                      {ann.label&&(function(){const mx=(ann.x1+ann.x2)/2,my=(ann.y1+ann.y2)/2,ltw=ann.label.length*2.4+4,lbh=5.5;return(<g>
+                      {ann.label ? (function(mx,my,ltw,lbh){return(<g>
                         <rect x={mx-ltw/2} y={my-lbh/2} width={ltw} height={lbh} rx="1.5" ry="1.5" fill="rgba(50,50,50,0.85)"/>
                         <text x={mx} y={my} textAnchor="middle" dominantBaseline="central" fontSize="3.5" fontWeight="bold" fontFamily="Arial" fill="#ef4444">{ann.label}</text>
-                      </g>);}())}
+                      </g>);}((ann.x1+ann.x2)/2,(ann.y1+ann.y2)/2,ann.label.length*2.4+4,5.5)) : null}
                     </g>);
                   }
                   if (ann.type==='text') {
@@ -4881,10 +4881,13 @@
                     var lx2=ann.x2-v.ux*RS,ly2=ann.y2-v.uy*RS;
                     var p2=annArrowPts(ann.x1,ann.y1,ann.x2,ann.y2,RS);
                     var p1=ann.twoHeads?annArrowPts(ann.x2,ann.y2,ann.x1,ann.y1,RS):null;
+                    var lmx=(ann.x1+ann.x2)/2,lmy=(ann.y1+ann.y2)/2,lltw=ann.label?(ann.label.length*2.4+4):0;
                     return (<g key={ann.id}>
                       <line x1={lx1} y1={ly1} x2={lx2} y2={ly2} stroke="#ef4444" strokeWidth="0.8"/>
                       <polygon points={p2} fill="#ef4444"/>
                       {p1&&<polygon points={p1} fill="#ef4444"/>}
+                      {ann.label&&<rect x={lmx-lltw/2} y={lmy-2.75} width={lltw} height={5.5} rx="1.5" ry="1.5" fill="rgba(50,50,50,0.85)"/>}
+                      {ann.label&&<text x={lmx} y={lmy} textAnchor="middle" dominantBaseline="central" fontSize="3.5" fontWeight="bold" fontFamily="Arial" fill="#ef4444">{ann.label}</text>}
                     </g>);
                   }
                   if(ann.type==='text'){
