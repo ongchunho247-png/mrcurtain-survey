@@ -884,6 +884,7 @@
 
     /* Header photo-section khi ở chế độ chọn */
     /* P51: reorder drag handle */
+    .chips-wrap { align-items: center; }
     .reorder-handle { display:flex;align-items:center;justify-content:center;width:36px;height:36px;
       position:absolute;top:4px;left:4px;z-index:5;border-radius:6px;
       background:rgba(0,0,0,0.55);color:#fff;font-size:18px;cursor:grab;touch-action:none;
@@ -1592,7 +1593,7 @@
     // =============================================
     // STORAGE UTILS
     // =============================================
-    const APP_PROMPT_VERSION = 'P57'; // Cập nhật khi lên version mới
+    const APP_PROMPT_VERSION = 'P58'; // Cập nhật khi lên version mới
     const STORAGE_KEY = 'mrcurtain_survey_projects';
     const STORAGE_KEY_LEGACY = 'mrcurtain_projects'; // key cũ từ Prompt 2
     // Khai báo sớm để runDataMigration() dùng được (Prompt 14.2)
@@ -2986,7 +2987,7 @@
       if(img.width && img.height) parts.push(img.width + ' × ' + img.height);
       if(Array.isArray(img.extraSizes)) img.extraSizes.forEach(function(s){ if(s.width&&s.height) parts.push(s.width+' × '+s.height); });
       var unit = img.unit||'mm';
-      if(parts.length) return parts.map(function(p){return p+' '+unit;}).join('\n');
+      if(parts.length) return parts.join('\n');  // unit shown in label
       return 'Chưa có kích thước';
     }
     function sanitizeFileName(s) {
@@ -3014,8 +3015,8 @@
         var curtain=(Array.isArray(img.curtainTypes)&&img.curtainTypes.length)?img.curtainTypes.join(' | '):(img.curtainType||'Chua co');
         var spec  = (Array.isArray(img.productSpecs)&&img.productSpecs.length)?img.productSpecs.join(' | '):(img.productSpec||'Chua co');
         var _szParts=[];
-        if(img.width&&img.height)_szParts.push(img.width+' x '+img.height+' '+(img.unit||'mm'));
-        if(Array.isArray(img.extraSizes))img.extraSizes.forEach(function(s){if(s.width&&s.height)_szParts.push(s.width+' x '+s.height+' '+(img.unit||'mm'));});
+        if(img.width&&img.height)_szParts.push(img.width+' x '+img.height);
+        if(Array.isArray(img.extraSizes))img.extraSizes.forEach(function(s){if(s.width&&s.height)_szParts.push(s.width+' x '+s.height);});
         var size=_szParts.length?_szParts.join('\n'):'Chua co';
         var tags  = (Array.isArray(img.tags)&&img.tags.length)?img.tags.join(' | '):'Khong co';
         var note  = joinLines(img.notes)||'Khong co';
@@ -3024,16 +3025,20 @@
 
         function wrapText(ctx, text, maxW, font) {
           ctx.font = font||'13px Arial';
-          var str = String(text||'');
-          if (ctx.measureText(str).width <= maxW) return [str];
-          var lines=[], cur='';
-          for (var i=0;i<str.length;i++) {
-            var t=cur+str[i];
-            if (ctx.measureText(t).width>maxW && cur) { lines.push(cur); cur=str[i]; }
-            else { cur=t; }
-          }
-          if (cur) lines.push(cur);
-          return lines;
+          // P58: handle newline chars — split first, wrap each segment
+          var segments = String(text||'').split('\n');
+          var all = [];
+          segments.forEach(function(seg){
+            if (ctx.measureText(seg).width <= maxW) { all.push(seg); return; }
+            var cur='';
+            for (var i=0;i<seg.length;i++) {
+              var t=cur+seg[i];
+              if (ctx.measureText(t).width>maxW && cur) { all.push(cur); cur=seg[i]; }
+              else { cur=t; }
+            }
+            if (cur) all.push(cur);
+          });
+          return all.length ? all : [''];
         }
 
         var domImg = new Image();
@@ -3194,9 +3199,10 @@
 
       /* Kích thước — P57: xuống dòng cho từng kích thước */
       var _szHtml = [];
-      if(img.width&&img.height) _szHtml.push(escapeHtml(img.width+' × '+img.height+' '+(img.unit||'mm')));
-      if(Array.isArray(img.extraSizes)) img.extraSizes.forEach(function(s){ if(s.width&&s.height) _szHtml.push(escapeHtml(s.width+' × '+s.height+' '+(img.unit||'mm'))); });
+      if(img.width&&img.height) _szHtml.push(escapeHtml(img.width+' × '+img.height));
+      if(Array.isArray(img.extraSizes)) img.extraSizes.forEach(function(s){ if(s.width&&s.height) _szHtml.push(escapeHtml(s.width+' × '+s.height)); });
       const size = _szHtml.length ? _szHtml.join('<br>') : 'Chưa có kích thước';
+      const sizeUnit = img.unit||'mm';
 
       /* Lưu ý */
       const tags = (Array.isArray(img.tags) && img.tags.length > 0)
@@ -3221,7 +3227,7 @@
         row('Vị trí',     pos)   +
         row('Loại rèm',   curtain) +
         row('Quy cách SP', spec)  +
-        '<tr><td style="padding:4px 0;color:#374151;white-space:nowrap;width:110px;vertical-align:top;font-size:13px;font-weight:600">Kích thước</td>' +
+        '<tr><td style="padding:4px 0;color:#374151;white-space:nowrap;width:110px;vertical-align:top;font-size:13px;font-weight:600">Kích thước (' + sizeUnit + ')</td>' +
         '<td style="padding:4px 0 4px 8px;font-size:13px;font-weight:700;color:#111827;word-break:break-word">' + size + '</td></tr>' +
         row('Lưu ý',      tags)  +
         row('Ghi chú',    note);
