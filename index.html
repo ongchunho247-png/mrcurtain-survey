@@ -1592,7 +1592,7 @@
     // =============================================
     // STORAGE UTILS
     // =============================================
-    const APP_PROMPT_VERSION = 'P52'; // Cập nhật khi lên version mới
+    const APP_PROMPT_VERSION = 'P53'; // Cập nhật khi lên version mới
     const STORAGE_KEY = 'mrcurtain_survey_projects';
     const STORAGE_KEY_LEGACY = 'mrcurtain_projects'; // key cũ từ Prompt 2
     // Khai báo sớm để runDataMigration() dùng được (Prompt 14.2)
@@ -4796,17 +4796,39 @@
               </div>}
             </div>
 
-            {/* ── Lưu ý (ordered multi-select) ── */}
-            {HASHTAG_GROUPS.filter(g => g.multi).map(group => (
+            {/* ── Lưu ý (ordered multi-select) ── P53: selected tags always visible + removable */}
+            {HASHTAG_GROUPS.filter(g => g.multi).map(group => {
+              var groupTags = getTagsByGroup(group.id);
+              var selectedTagsInGroup = form.tags.filter(function(t){ return groupTags.some(function(gt){return gt.tagName===t;}); });
+              var isCollapsed = collSections.has('luuY_'+group.id);
+              return (
               <div key={group.id} className="idf-section">
                 <div className="idf-section-title" style={{display:'flex',alignItems:'center',justifyContent:'space-between',cursor:'pointer'}}
                   onClick={()=>toggleColl('luuY_'+group.id)}>
                   <span>⚠️ {group.label} <span className="idf-hint">Chọn nhiều, theo thứ tự</span></span>
-                  <span style={{fontSize:11,color:'var(--text-secondary)'}}>{collSections.has('luuY_'+group.id)?'▶ Mở':'▼ Thu'}</span>
+                  <span style={{fontSize:11,color:'var(--text-secondary)'}}>{isCollapsed?'▶ Mở':'▼ Thu'}</span>
                 </div>
-                {!collSections.has('luuY_'+group.id) && <div className="chip-group">
+                {/* P53: Tags đã chọn luôn hiển thị — có × để xoá nhanh */}
+                {isCollapsed && selectedTagsInGroup.length > 0 && (
+                  <div style={{display:'flex',flexWrap:'wrap',gap:6,padding:'6px 0 2px'}}>
+                    {selectedTagsInGroup.map(function(t){
+                      return (
+                        <span key={t} style={{
+                          display:'inline-flex',alignItems:'center',gap:4,
+                          background:'var(--primary)',color:'#fff',
+                          borderRadius:20,padding:'4px 10px',fontSize:13,fontWeight:600,
+                        }}>
+                          {t}
+                          <button type="button" onClick={function(e){e.stopPropagation();handleOrderedMultiChip('tags',t);}}
+                            style={{background:'none',border:'none',color:'#fff',cursor:'pointer',fontSize:15,lineHeight:1,padding:'0 0 0 2px',fontWeight:'bold'}}>×</button>
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
+                {!isCollapsed && <div className="chip-group">
                   <div className="chips-wrap">
-                    {getTagsByGroup(group.id).map(tag => {
+                    {groupTags.map(tag => {
                       const idx = form.tags.indexOf(tag.tagName);
                       const selected = idx !== -1;
                       return (
@@ -4824,7 +4846,8 @@
                   </div>
                 </div>}
               </div>
-            ))}
+              );
+            })}
 
             {/* ── Kích thước ── */}
             <div className="idf-section">
