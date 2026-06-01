@@ -1593,7 +1593,7 @@
     // =============================================
     // STORAGE UTILS
     // =============================================
-    const APP_PROMPT_VERSION = 'P61'; // Cập nhật khi lên version mới
+    const APP_PROMPT_VERSION = 'P62'; // Cập nhật khi lên version mới
     const STORAGE_KEY = 'mrcurtain_survey_projects';
     const STORAGE_KEY_LEGACY = 'mrcurtain_projects'; // key cũ từ Prompt 2
     // Khai báo sớm để runDataMigration() dùng được (Prompt 14.2)
@@ -4976,14 +4976,14 @@
               <div className="size-row">
                 <div className="size-input-wrap">
                   <div className="size-input-label">Ngang</div>
-                  <input type="text" inputMode="decimal" pattern="[0-9.,+\-]*"
+                  <input type="text" inputMode="text"
                     name="width" className="size-input" placeholder="0"
                     value={form.width} onChange={handleSizeInput} onBlur={handleSizeBlur}/>
                 </div>
                 <div className="size-sep">×</div>
                 <div className="size-input-wrap">
                   <div className="size-input-label">Cao</div>
-                  <input type="text" inputMode="decimal" pattern="[0-9.,+\-]*"
+                  <input type="text" inputMode="text"
                     name="height" className="size-input" placeholder="0"
                     value={form.height} onChange={handleSizeInput} onBlur={handleSizeBlur}/>
                 </div>
@@ -4996,7 +4996,7 @@
                   <div key={i} className="size-row" style={{marginTop:6}}>
                     <div className="size-input-wrap">
                       <div className="size-input-label">Ngang {i+2}</div>
-                      <input type="text" inputMode="numeric" pattern="[0-9.,]*"
+                      <input type="text"
                         className="size-input" placeholder="0"
                         value={sz.width}
                         onChange={function(e){
@@ -5011,7 +5011,7 @@
                     <div className="size-sep">×</div>
                     <div className="size-input-wrap">
                       <div className="size-input-label">Cao {i+2}</div>
-                      <input type="text" inputMode="numeric" pattern="[0-9.,]*"
+                      <input type="text"
                         className="size-input" placeholder="0"
                         value={sz.height}
                         onChange={function(e){
