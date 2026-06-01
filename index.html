@@ -1593,7 +1593,7 @@
     // =============================================
     // STORAGE UTILS
     // =============================================
-    const APP_PROMPT_VERSION = 'P59'; // Cập nhật khi lên version mới
+    const APP_PROMPT_VERSION = 'P60'; // Cập nhật khi lên version mới
     const STORAGE_KEY = 'mrcurtain_survey_projects';
     const STORAGE_KEY_LEGACY = 'mrcurtain_projects'; // key cũ từ Prompt 2
     // Khai báo sớm để runDataMigration() dùng được (Prompt 14.2)
@@ -4775,18 +4775,29 @@
                     var idx=stored?form.positions.indexOf(stored):-1;
                     var selected=idx!==-1;
                     return (
-                      <React.Fragment key={tag.tagId}>
-                        <button type="button"
-                          className={`chip${selected ? ' chip-multi-active' : ''}`}
-                          onClick={() => handleOrderedMultiChip('positions', tag.tagName)}>
-                          {selected && <span className="chip-order-badge">{idx + 1}</span>}
-                          {tag.tagName}
-                        </button>
-                        {selected && <SuffixInput key={tag.tagName+"-sfx"} fieldName="positions" base={tag.tagName} initVal={chipGetSuffix(form.positions,tag.tagName)} onSave={function(v){handleChipSuffix("positions",tag.tagName,v);}}/> }
-                      </React.Fragment>
+                      <button key={tag.tagId} type="button"
+                        className={`chip${selected ? ' chip-multi-active' : ''}`}
+                        onClick={() => handleOrderedMultiChip('positions', tag.tagName)}>
+                        {selected && <span className="chip-order-badge">{idx + 1}</span>}
+                        {tag.tagName}
+                      </button>
                     );
                   })}
                 </div>
+                {/* P60: suffix inputs tách biệt phía dưới chips */}
+                {form.positions.length > 0 && (
+                  <div style={{marginTop:8,display:'flex',flexDirection:'column',gap:6}}>
+                    {getTagsByGroup('position').filter(function(tag){return chipGetStored(form.positions,tag.tagName)!==undefined;}).map(function(tag){
+                      var curSfx=chipGetSuffix(form.positions,tag.tagName);
+                      return (
+                        <div key={tag.tagId+'-row'} style={{display:'flex',alignItems:'center',gap:8}}>
+                          <span style={{fontSize:13,fontWeight:600,color:'var(--text)',minWidth:90,flex:1}}>{tag.tagName}</span>
+                          <SuffixInput fieldName="positions" base={tag.tagName} initVal={curSfx} onSave={function(v){handleChipSuffix('positions',tag.tagName,v);}}/>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>}
             </div>
 
@@ -4804,18 +4815,29 @@
                     var idx=stored?form.curtainTypes.indexOf(stored):-1;
                     var selected=idx!==-1;
                     return (
-                      <React.Fragment key={tag.tagId}>
-                        <button type="button"
-                          className={`chip${selected ? ' chip-multi-active' : ''}`}
-                          onClick={() => handleOrderedMultiChip('curtainTypes', tag.tagName)}>
-                          {selected && <span className="chip-order-badge">{idx + 1}</span>}
-                          {tag.tagName}
-                        </button>
-                        {selected && <SuffixInput key={tag.tagName+"-sfx"} fieldName="curtainTypes" base={tag.tagName} initVal={chipGetSuffix(form.curtainTypes,tag.tagName)} onSave={function(v){handleChipSuffix("curtainTypes",tag.tagName,v);}}/> }
-                      </React.Fragment>
+                      <button key={tag.tagId} type="button"
+                        className={`chip${selected ? ' chip-multi-active' : ''}`}
+                        onClick={() => handleOrderedMultiChip('curtainTypes', tag.tagName)}>
+                        {selected && <span className="chip-order-badge">{idx + 1}</span>}
+                        {tag.tagName}
+                      </button>
                     );
                   })}
                 </div>
+                {/* P60: suffix inputs tách biệt phía dưới chips */}
+                {form.curtainTypes.length > 0 && (
+                  <div style={{marginTop:8,display:'flex',flexDirection:'column',gap:6}}>
+                    {getTagsByGroup('curtainType').filter(function(tag){return chipGetStored(form.curtainTypes,tag.tagName)!==undefined;}).map(function(tag){
+                      var curSfx=chipGetSuffix(form.curtainTypes,tag.tagName);
+                      return (
+                        <div key={tag.tagId+'-row'} style={{display:'flex',alignItems:'center',gap:8}}>
+                          <span style={{fontSize:13,fontWeight:600,color:'var(--text)',minWidth:90,flex:1}}>{tag.tagName}</span>
+                          <SuffixInput fieldName="curtainTypes" base={tag.tagName} initVal={curSfx} onSave={function(v){handleChipSuffix('curtainTypes',tag.tagName,v);}}/>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>}
             </div>
 
@@ -4826,25 +4848,34 @@
                 <span>Quy cách sản phẩm <span className="idf-hint">Chọn nhiều, theo thứ tự</span></span>
                 <span style={{fontSize:11,color:'var(--text-secondary)'}}>{collSections.has('quyCach')?'▶ Mở':'▼ Thu'}</span>
               </div>
-              {!collSections.has('quyCach') && <div className="chip-group">
+                            {!collSections.has('quyCach') && <div className="chip-group">
                 <div className="chips-wrap">
                   {getTagsByGroup('productSpec').map(tag => {
                     var stored=chipGetStored(form.productSpecs,tag.tagName);
                     var idx=stored?form.productSpecs.indexOf(stored):-1;
                     var selected=idx!==-1;
                     return (
-                      <React.Fragment key={tag.tagId}>
-                        <button type="button"
-                          className={`chip${selected ? ' chip-multi-active' : ''}`}
-                          onClick={() => handleOrderedMultiChip('productSpecs', tag.tagName)}>
-                          {selected && <span className="chip-order-badge">{idx + 1}</span>}
-                          {tag.tagName}
-                        </button>
-                        {selected && <SuffixInput key={tag.tagName+"-sfx"} fieldName="productSpecs" base={tag.tagName} initVal={chipGetSuffix(form.productSpecs,tag.tagName)} onSave={function(v){handleChipSuffix("productSpecs",tag.tagName,v);}}/> }
-                      </React.Fragment>
+                      <button key={tag.tagId} type="button"
+                        className={`chip${selected ? ' chip-multi-active' : ''}`}
+                        onClick={() => handleOrderedMultiChip('productSpecs', tag.tagName)}>
+                        {selected && <span className="chip-order-badge">{idx + 1}</span>}
+                        {tag.tagName}
+                      </button>
                     );
                   })}
                 </div>
+                {form.productSpecs.length > 0 && (
+                  <div style={{marginTop:8,display:'flex',flexDirection:'column',gap:6}}>
+                    {getTagsByGroup('productSpec').filter(function(tag){return chipGetStored(form.productSpecs,tag.tagName)!==undefined;}).map(function(tag){
+                      return (
+                        <div key={tag.tagId+'-row'} style={{display:'flex',alignItems:'center',gap:8}}>
+                          <span style={{fontSize:13,fontWeight:600,color:'var(--text)',flex:1}}>{tag.tagName}</span>
+                          <SuffixInput fieldName="productSpecs" base={tag.tagName} initVal={chipGetSuffix(form.productSpecs,tag.tagName)} onSave={function(v){handleChipSuffix('productSpecs',tag.tagName,v);}}/>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>}
             </div>
 
@@ -4885,17 +4916,29 @@
                       var idx=stored?form.tags.indexOf(stored):-1;
                       var selected=idx!==-1;
                       return (
-                        <React.Fragment key={tag.tagId}>
-                          <button type="button"
-                            className={`chip${selected ? ' chip-multi-active' : ''}`}
-                            onClick={() => handleOrderedMultiChip('tags', tag.tagName)}>
-                            {selected && <span className="chip-order-badge">{idx + 1}</span>}
-                            {tag.tagName}
-                          </button>
-                          {selected && <SuffixInput key={tag.tagName+'-sfx'} fieldName="tags" base={tag.tagName} initVal={chipGetSuffix(form.tags,tag.tagName)} onSave={function(v){handleChipSuffix('tags',tag.tagName,v);}}/>}
-                        </React.Fragment>
+                        <button key={tag.tagId} type="button"
+                          className={`chip${selected ? ' chip-multi-active' : ''}`}
+                          onClick={() => handleOrderedMultiChip('tags', tag.tagName)}>
+                          {selected && <span className="chip-order-badge">{idx + 1}</span>}
+                          {tag.tagName}
+                        </button>
                       );
                     })}
+                  </div>
+                  {/* P60: suffix inputs tách biệt phía dưới */}
+                  {form.tags.length > 0 && (
+                    <div style={{marginTop:8,display:'flex',flexDirection:'column',gap:6}}>
+                      {groupTags.filter(function(tag){return chipGetStored(form.tags,tag.tagName)!==undefined;}).map(function(tag){
+                        return (
+                          <div key={tag.tagId+'-row'} style={{display:'flex',alignItems:'center',gap:8}}>
+                            <span style={{fontSize:13,fontWeight:600,color:'var(--text)',flex:1}}>{tag.tagName}</span>
+                            <SuffixInput fieldName="tags" base={tag.tagName} initVal={chipGetSuffix(form.tags,tag.tagName)} onSave={function(v){handleChipSuffix('tags',tag.tagName,v);}}/>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                  <div style={{display:'none'}}>
                   </div>
                 </div>}
               </div>
