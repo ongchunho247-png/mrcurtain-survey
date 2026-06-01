@@ -1593,7 +1593,7 @@
     // =============================================
     // STORAGE UTILS
     // =============================================
-    const APP_PROMPT_VERSION = 'P60'; // Cập nhật khi lên version mới
+    const APP_PROMPT_VERSION = 'P61'; // Cập nhật khi lên version mới
     const STORAGE_KEY = 'mrcurtain_survey_projects';
     const STORAGE_KEY_LEGACY = 'mrcurtain_projects'; // key cũ từ Prompt 2
     // Khai báo sớm để runDataMigration() dùng được (Prompt 14.2)
@@ -4529,11 +4529,32 @@
       }
 
       /* --- Nhập số kích thước --- */
+      // P61: tính toán cộng trừ trong ô kích thước
+      function evalSizeExpr(str) {
+        var s = str.replace(/,/g,'.').replace(/[^\d.+\-]/g,'');
+        if(!s) return '';
+        try {
+          // Chỉ cho phép số và +/-
+          if(!/^[\d.+\-]+$/.test(s)) return str;
+          var result = s.split('+').reduce(function(acc, part) {
+            return acc + part.split('-').reduce(function(a, n, i) {
+              return i === 0 ? a + parseFloat(n||0) : a - parseFloat(n||0);
+            }, 0);
+          }, 0);
+          var rounded = Math.round(result * 100) / 100;
+          return isNaN(rounded) ? str : String(rounded);
+        } catch(e) { return str; }
+      }
       function handleSizeInput(e) {
         const { name, value } = e.target;
-        // Chỉ cho nhập số và dấu chấm/phẩy
-        const clean = value.replace(/[^\d.,]/g, '');
+        // Cho nhập số, dấu chấm/phẩy, +/-
+        const clean = value.replace(/[^\d.,+\-]/g, '');
         setForm(prev => ({ ...prev, [name]: clean }));
+      }
+      function handleSizeBlur(e) {
+        const { name, value } = e.target;
+        const result = evalSizeExpr(value);
+        if(result !== value) setForm(prev => ({ ...prev, [name]: result }));
       }
 
       /* --- Chọn ảnh thay thế --- */
@@ -4955,16 +4976,16 @@
               <div className="size-row">
                 <div className="size-input-wrap">
                   <div className="size-input-label">Ngang</div>
-                  <input type="text" inputMode="numeric" pattern="[0-9.,]*"
+                  <input type="text" inputMode="decimal" pattern="[0-9.,+\-]*"
                     name="width" className="size-input" placeholder="0"
-                    value={form.width} onChange={handleSizeInput}/>
+                    value={form.width} onChange={handleSizeInput} onBlur={handleSizeBlur}/>
                 </div>
                 <div className="size-sep">×</div>
                 <div className="size-input-wrap">
                   <div className="size-input-label">Cao</div>
-                  <input type="text" inputMode="numeric" pattern="[0-9.,]*"
+                  <input type="text" inputMode="decimal" pattern="[0-9.,+\-]*"
                     name="height" className="size-input" placeholder="0"
-                    value={form.height} onChange={handleSizeInput}/>
+                    value={form.height} onChange={handleSizeInput} onBlur={handleSizeBlur}/>
                 </div>
                 <button type="button" onClick={function(){setForm(function(p){return {...p,extraSizes:[...p.extraSizes,{width:'',height:''}]};});}}
                   style={{background:'none',border:'none',color:'var(--primary)',fontSize:22,cursor:'pointer',padding:'0 4px',lineHeight:1}}>＋</button>
@@ -4979,7 +5000,11 @@
                         className="size-input" placeholder="0"
                         value={sz.width}
                         onChange={function(e){
-                          var v=e.target.value.replace(/[^\d.,]/g,'');
+                          var v=e.target.value.replace(/[^\d.,+\-]/g,'');
+                          setForm(function(p){var es=[...p.extraSizes];es[i]={...es[i],width:v};return {...p,extraSizes:es};});
+                        }}
+                        onBlur={function(e){
+                          var v=evalSizeExpr(e.target.value);
                           setForm(function(p){var es=[...p.extraSizes];es[i]={...es[i],width:v};return {...p,extraSizes:es};});
                         }}/>
                     </div>
@@ -4990,7 +5015,11 @@
                         className="size-input" placeholder="0"
                         value={sz.height}
                         onChange={function(e){
-                          var v=e.target.value.replace(/[^\d.,]/g,'');
+                          var v=e.target.value.replace(/[^\d.,+\-]/g,'');
+                          setForm(function(p){var es=[...p.extraSizes];es[i]={...es[i],height:v};return {...p,extraSizes:es};});
+                        }}
+                        onBlur={function(e){
+                          var v=evalSizeExpr(e.target.value);
                           setForm(function(p){var es=[...p.extraSizes];es[i]={...es[i],height:v};return {...p,extraSizes:es};});
                         }}/>
                     </div>
