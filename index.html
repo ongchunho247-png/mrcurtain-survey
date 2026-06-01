@@ -1593,7 +1593,7 @@
     // =============================================
     // STORAGE UTILS
     // =============================================
-    const APP_PROMPT_VERSION = 'P58'; // Cập nhật khi lên version mới
+    const APP_PROMPT_VERSION = 'P59'; // Cập nhật khi lên version mới
     const STORAGE_KEY = 'mrcurtain_survey_projects';
     const STORAGE_KEY_LEGACY = 'mrcurtain_projects'; // key cũ từ Prompt 2
     // Khai báo sớm để runDataMigration() dùng được (Prompt 14.2)
@@ -3984,7 +3984,29 @@
     };
 
 
-    /* ── Annotation helpers (P30) ── */
+    /* ── P59: SuffixInput — isolated state, no parent re-render on type ── */
+    function SuffixInput({ fieldName, base, initVal, onSave }) {
+      var inp = React.useRef(null);
+      React.useEffect(function(){
+        if(inp.current) inp.current.value = initVal;
+      }, [initVal]);
+      return React.createElement('input', {
+        ref: inp,
+        type: 'text',
+        defaultValue: initVal,
+        placeholder: '1,2...',
+        onBlur: function(e){ onSave(e.target.value); },
+        onKeyDown: function(e){ if(e.key==='Enter'){e.preventDefault();e.target.blur();} },
+        onClick: function(e){ e.stopPropagation(); },
+        onPointerDown: function(e){ e.stopPropagation(); },
+        onTouchStart: function(e){ e.stopPropagation(); },
+        style: {width:52,padding:'5px 7px',fontSize:13,borderRadius:6,
+          border:'1.5px solid var(--primary)',background:'var(--bg)',color:'var(--text)',
+          verticalAlign:'middle',marginLeft:2}
+      });
+    }
+
+        /* ── Annotation helpers (P30) ── */
     function annArrowPts(x1,y1,x2,y2,s) {
       var dx=x2-x1,dy=y2-y1,len=Math.sqrt(dx*dx+dy*dy);
       if(len<0.001) return '';
@@ -4760,18 +4782,7 @@
                           {selected && <span className="chip-order-badge">{idx + 1}</span>}
                           {tag.tagName}
                         </button>
-                        {selected && <input type="text"
-                          key={tag.tagName+'-sfx'}
-                          defaultValue={chipGetSuffix(form.positions,tag.tagName)}
-                          onBlur={function(e){handleChipSuffix('positions',tag.tagName,e.target.value);}}
-                          onKeyDown={function(e){if(e.key==='Enter'){e.preventDefault();e.target.blur();}}}
-                          onClick={function(e){e.stopPropagation();}}
-                          onTouchStart={function(e){e.stopPropagation();}}
-                          placeholder="1,2..."
-                          style={{width:52,padding:'5px 7px',fontSize:13,borderRadius:6,
-                            border:'1.5px solid var(--primary)',background:'var(--bg)',color:'var(--text)',
-                            verticalAlign:'middle',marginLeft:2}}
-                        />}
+                        {selected && <SuffixInput key={tag.tagName+"-sfx"} fieldName="positions" base={tag.tagName} initVal={chipGetSuffix(form.positions,tag.tagName)} onSave={function(v){handleChipSuffix("positions",tag.tagName,v);}}/> }
                       </React.Fragment>
                     );
                   })}
@@ -4800,18 +4811,7 @@
                           {selected && <span className="chip-order-badge">{idx + 1}</span>}
                           {tag.tagName}
                         </button>
-                        {selected && <input type="text"
-                          key={tag.tagName+'-sfx'}
-                          defaultValue={chipGetSuffix(form.curtainTypes,tag.tagName)}
-                          onBlur={function(e){handleChipSuffix('curtainTypes',tag.tagName,e.target.value);}}
-                          onKeyDown={function(e){if(e.key==='Enter'){e.preventDefault();e.target.blur();}}}
-                          onClick={function(e){e.stopPropagation();}}
-                          onTouchStart={function(e){e.stopPropagation();}}
-                          placeholder="1,2..."
-                          style={{width:52,padding:'5px 7px',fontSize:13,borderRadius:6,
-                            border:'1.5px solid var(--primary)',background:'var(--bg)',color:'var(--text)',
-                            verticalAlign:'middle',marginLeft:2}}
-                        />}
+                        {selected && <SuffixInput key={tag.tagName+"-sfx"} fieldName="curtainTypes" base={tag.tagName} initVal={chipGetSuffix(form.curtainTypes,tag.tagName)} onSave={function(v){handleChipSuffix("curtainTypes",tag.tagName,v);}}/> }
                       </React.Fragment>
                     );
                   })}
@@ -4840,18 +4840,7 @@
                           {selected && <span className="chip-order-badge">{idx + 1}</span>}
                           {tag.tagName}
                         </button>
-                        {selected && <input type="text"
-                          key={tag.tagName+'-sfx'}
-                          defaultValue={chipGetSuffix(form.productSpecs,tag.tagName)}
-                          onBlur={function(e){handleChipSuffix('productSpecs',tag.tagName,e.target.value);}}
-                          onKeyDown={function(e){if(e.key==='Enter'){e.preventDefault();e.target.blur();}}}
-                          onClick={function(e){e.stopPropagation();}}
-                          onTouchStart={function(e){e.stopPropagation();}}
-                          placeholder="1,2..."
-                          style={{width:52,padding:'5px 7px',fontSize:13,borderRadius:6,
-                            border:'1.5px solid var(--primary)',background:'var(--bg)',color:'var(--text)',
-                            verticalAlign:'middle',marginLeft:2}}
-                        />}
+                        {selected && <SuffixInput key={tag.tagName+"-sfx"} fieldName="productSpecs" base={tag.tagName} initVal={chipGetSuffix(form.productSpecs,tag.tagName)} onSave={function(v){handleChipSuffix("productSpecs",tag.tagName,v);}}/> }
                       </React.Fragment>
                     );
                   })}
@@ -4903,18 +4892,7 @@
                             {selected && <span className="chip-order-badge">{idx + 1}</span>}
                             {tag.tagName}
                           </button>
-                          {selected && <input type="text"
-                            key={tag.tagName+'-sfx'}
-                            defaultValue={chipGetSuffix(form.tags,tag.tagName)}
-                            onBlur={function(e){handleChipSuffix('tags',tag.tagName,e.target.value);}}
-                            onKeyDown={function(e){if(e.key==='Enter'){e.preventDefault();e.target.blur();}}}
-                            onClick={function(e){e.stopPropagation();}}
-                            onTouchStart={function(e){e.stopPropagation();}}
-                            placeholder="1,2..."
-                            style={{width:52,padding:'5px 7px',fontSize:13,borderRadius:6,
-                              border:'1.5px solid var(--primary)',background:'var(--bg)',color:'var(--text)',
-                              verticalAlign:'middle',marginLeft:2}}
-                          />}
+                          {selected && <SuffixInput key={tag.tagName+'-sfx'} fieldName="tags" base={tag.tagName} initVal={chipGetSuffix(form.tags,tag.tagName)} onSave={function(v){handleChipSuffix('tags',tag.tagName,v);}}/>}
                         </React.Fragment>
                       );
                     })}
@@ -6202,7 +6180,7 @@
           });
 
           /* P49: scale 1.5 mobile (đủ nét), timeout 90s phòng treo */
-          const SCALE = window.innerWidth < 768 ? 2 : 2;
+          const SCALE = window.innerWidth < 768 ? 1.2 : 2;  // P59: 2x tren mobile hay bi treo RAM
           const canvas = await Promise.race([
             html2canvas(container, {
               scale: SCALE, useCORS: true, allowTaint: true, backgroundColor: '#ffffff',
