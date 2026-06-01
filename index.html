@@ -1609,7 +1609,7 @@
     // =============================================
     // STORAGE UTILS
     // =============================================
-    const APP_PROMPT_VERSION = 'P68'; // Cập nhật khi lên version mới
+    const APP_PROMPT_VERSION = 'P69'; // Cập nhật khi lên version mới
     const STORAGE_KEY = 'mrcurtain_survey_projects';
     const STORAGE_KEY_LEGACY = 'mrcurtain_projects'; // key cũ từ Prompt 2
     // Khai báo sớm để runDataMigration() dùng được (Prompt 14.2)
@@ -5170,8 +5170,13 @@
 
     /* --- Tóm tắt size (luôn hiển thị mm) --- */
     function sizeLabel(img) {
-      if (img.width && img.height) return `${img.width} × ${img.height} mm`;
-      return null;
+      var parts = [];
+      if(img.width && img.height) parts.push(img.width + ' × ' + img.height);
+      if(Array.isArray(img.extraSizes)) img.extraSizes.forEach(function(s){
+        if(s.width && s.height) parts.push(s.width + ' × ' + s.height);
+      });
+      if(!parts.length) return null;
+      return {lines: parts, unit: img.unit || 'mm'};
     }
 
     /* --- Thumbnail card với tóm tắt thông tin --- */
