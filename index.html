@@ -1592,7 +1592,7 @@
     // =============================================
     // STORAGE UTILS
     // =============================================
-    const APP_PROMPT_VERSION = 'P54'; // Cập nhật khi lên version mới
+    const APP_PROMPT_VERSION = 'P55'; // Cập nhật khi lên version mới
     const STORAGE_KEY = 'mrcurtain_survey_projects';
     const STORAGE_KEY_LEGACY = 'mrcurtain_projects'; // key cũ từ Prompt 2
     // Khai báo sớm để runDataMigration() dùng được (Prompt 14.2)
@@ -4742,9 +4742,13 @@
                           {selected && <span className="chip-order-badge">{idx + 1}</span>}
                           {tag.tagName}
                         </button>
-                        {selected && <input type="text" value={chipGetSuffix(form.positions,tag.tagName)}
-                          onChange={function(e){handleChipSuffix('positions',tag.tagName,e.target.value);}}
+                        {selected && <input type="text"
+                          key={tag.tagName+'-sfx'}
+                          defaultValue={chipGetSuffix(form.positions,tag.tagName)}
+                          onBlur={function(e){handleChipSuffix('positions',tag.tagName,e.target.value);}}
+                          onKeyDown={function(e){if(e.key==='Enter'){e.preventDefault();e.target.blur();}}}
                           onClick={function(e){e.stopPropagation();}}
+                          onTouchStart={function(e){e.stopPropagation();}}
                           placeholder="1,2..."
                           style={{width:52,padding:'5px 7px',fontSize:13,borderRadius:6,
                             border:'1.5px solid var(--primary)',background:'var(--bg)',color:'var(--text)',
@@ -4778,9 +4782,13 @@
                           {selected && <span className="chip-order-badge">{idx + 1}</span>}
                           {tag.tagName}
                         </button>
-                        {selected && <input type="text" value={chipGetSuffix(form.curtainTypes,tag.tagName)}
-                          onChange={function(e){handleChipSuffix('curtainTypes',tag.tagName,e.target.value);}}
+                        {selected && <input type="text"
+                          key={tag.tagName+'-sfx'}
+                          defaultValue={chipGetSuffix(form.curtainTypes,tag.tagName)}
+                          onBlur={function(e){handleChipSuffix('curtainTypes',tag.tagName,e.target.value);}}
+                          onKeyDown={function(e){if(e.key==='Enter'){e.preventDefault();e.target.blur();}}}
                           onClick={function(e){e.stopPropagation();}}
+                          onTouchStart={function(e){e.stopPropagation();}}
                           placeholder="1,2..."
                           style={{width:52,padding:'5px 7px',fontSize:13,borderRadius:6,
                             border:'1.5px solid var(--primary)',background:'var(--bg)',color:'var(--text)',
@@ -4814,9 +4822,13 @@
                           {selected && <span className="chip-order-badge">{idx + 1}</span>}
                           {tag.tagName}
                         </button>
-                        {selected && <input type="text" value={chipGetSuffix(form.productSpecs,tag.tagName)}
-                          onChange={function(e){handleChipSuffix('productSpecs',tag.tagName,e.target.value);}}
+                        {selected && <input type="text"
+                          key={tag.tagName+'-sfx'}
+                          defaultValue={chipGetSuffix(form.productSpecs,tag.tagName)}
+                          onBlur={function(e){handleChipSuffix('productSpecs',tag.tagName,e.target.value);}}
+                          onKeyDown={function(e){if(e.key==='Enter'){e.preventDefault();e.target.blur();}}}
                           onClick={function(e){e.stopPropagation();}}
+                          onTouchStart={function(e){e.stopPropagation();}}
                           placeholder="1,2..."
                           style={{width:52,padding:'5px 7px',fontSize:13,borderRadius:6,
                             border:'1.5px solid var(--primary)',background:'var(--bg)',color:'var(--text)',
@@ -4873,9 +4885,13 @@
                             {selected && <span className="chip-order-badge">{idx + 1}</span>}
                             {tag.tagName}
                           </button>
-                          {selected && <input type="text" value={chipGetSuffix(form.tags,tag.tagName)}
-                            onChange={function(e){handleChipSuffix('tags',tag.tagName,e.target.value);}}
+                          {selected && <input type="text"
+                            key={tag.tagName+'-sfx'}
+                            defaultValue={chipGetSuffix(form.tags,tag.tagName)}
+                            onBlur={function(e){handleChipSuffix('tags',tag.tagName,e.target.value);}}
+                            onKeyDown={function(e){if(e.key==='Enter'){e.preventDefault();e.target.blur();}}}
                             onClick={function(e){e.stopPropagation();}}
+                            onTouchStart={function(e){e.stopPropagation();}}
                             placeholder="1,2..."
                             style={{width:52,padding:'5px 7px',fontSize:13,borderRadius:6,
                               border:'1.5px solid var(--primary)',background:'var(--bg)',color:'var(--text)',
