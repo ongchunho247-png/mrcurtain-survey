@@ -883,6 +883,13 @@
     }
 
     /* Header photo-section khi ở chế độ chọn */
+    /* P51: reorder drag handle */
+    .reorder-handle { display:flex;align-items:center;justify-content:center;width:36px;height:36px;
+      position:absolute;top:4px;left:4px;z-index:5;border-radius:6px;
+      background:rgba(0,0,0,0.55);color:#fff;font-size:18px;cursor:grab;touch-action:none;
+      user-select:none;-webkit-user-select:none; }
+    .photo-thumb-card.dragging { opacity:0.35; }
+    .photo-thumb-card.drag-over { outline:2.5px dashed var(--primary); outline-offset:2px; }
     .btn-select-mode {
       padding: 7px 13px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600;
       border: 1.5px solid var(--primary); color: var(--primary);
@@ -1585,7 +1592,7 @@
     // =============================================
     // STORAGE UTILS
     // =============================================
-    const APP_PROMPT_VERSION = 'P50'; // Cập nhật khi lên version mới
+    const APP_PROMPT_VERSION = 'P51'; // Cập nhật khi lên version mới
     const STORAGE_KEY = 'mrcurtain_survey_projects';
     const STORAGE_KEY_LEGACY = 'mrcurtain_projects'; // key cũ từ Prompt 2
     // Khai báo sớm để runDataMigration() dùng được (Prompt 14.2)
@@ -2218,16 +2225,37 @@
         return all
           .filter(img => img.projectId === projectId && img.isDeleted !== true)
           .sort((a, b) => {
+            // P51: sortOrder khi đã sắp xếp thủ công
+            if(a.sortOrder !== undefined && b.sortOrder !== undefined) return a.sortOrder - b.sortOrder;
+            if(a.sortOrder !== undefined) return -1;
+            if(b.sortOrder !== undefined) return 1;
             const aR = !!a.restoredAt, bR = !!b.restoredAt;
-            if (aR !== bR) return aR ? 1 : -1;            // restored → cuối
+            if (aR !== bR) return aR ? 1 : -1;
             if (aR && bR) return new Date(a.restoredAt) - new Date(b.restoredAt);
-            return new Date(b.createdAt) - new Date(a.createdAt); // mới nhất trước
+            return new Date(b.createdAt) - new Date(a.createdAt);
           });
       } catch (err) {
         storageLog('ERROR', 'chi-tiết', 'getImages()',
           'JSON.parse images thất bại', String(err));
         return [];
       }
+    }
+    // P51: lưu thứ tự sắp xếp ảnh
+    function reorderImages(projectId, orderedIds) {
+      try {
+        var raw = _lsGet(IMAGES_KEY);
+        if(!raw) return;
+        var all = JSON.parse(raw);
+        if(!Array.isArray(all)) return;
+        var orderMap = {};
+        orderedIds.forEach(function(id,i){ orderMap[id]=i; });
+        var updated = all.map(function(img){
+          if(img.projectId===projectId && orderMap[img.imageId]!==undefined)
+            return Object.assign({},img,{sortOrder:orderMap[img.imageId]});
+          return img;
+        });
+        _lsSet(IMAGES_KEY, JSON.stringify(updated));
+      } catch(e){ console.warn('reorderImages error',e); }
     }
 
     /**
@@ -4891,7 +4919,7 @@
     }
 
     /* --- Thumbnail card với tóm tắt thông tin --- */
-    function PhotoThumbCard({ img, idx, onSelect, onDelete, isSelectionMode, isSelected, onToggleSelect }) {
+    function PhotoThumbCard({ img, idx, onSelect, onDelete, isSelectionMode, isSelected, onToggleSelect, isReorderMode, onDragStart, onDragEnter, onDragEnd }) {
       const size         = sizeLabel(img);
       const isProduction = img.status === 'production';
       const statusLabel  = isProduction ? 'Sản xuất' : 'Khảo sát';
@@ -4905,13 +4933,23 @@
         <div
           className={`photo-thumb-card${isSelected ? ' selected' : ''}`}
           data-image-id={img.imageId}
-          onClick={() => { if (!isSelectionMode) onSelect(img.imageId); }}
+          onClick={function(){ if(!isSelectionMode && !isReorderMode) onSelect(img.imageId); }}
           role="button"
           aria-label={isSelectionMode ? `${isSelected ? 'Bỏ chọn' : 'Chọn'} ảnh ${idx + 1}` : `Xem thông tin ảnh ${idx + 1}`}
-          style={{cursor:'pointer'}}
+          style={{cursor: isReorderMode ? 'default' : 'pointer', position:'relative'}}
+          onDragOver={isReorderMode ? function(e){e.preventDefault();if(onDragEnter)onDragEnter(img.imageId);} : undefined}
         >
+          {/* P51: drag handle khi reorder mode */}
+          {isReorderMode && (
+            <div className="reorder-handle"
+              draggable={true}
+              onDragStart={function(e){e.dataTransfer.effectAllowed='move';if(onDragStart)onDragStart(img.imageId);}}
+              onDragEnd={function(){if(onDragEnd)onDragEnd();}}
+              onPointerDown={function(e){e.stopPropagation();}}
+            >⠿</div>
+          )}
           {/* Badge STT — góc trên trái */}
-          <span className="photo-thumb-stt">{idx + 1}</span>
+          <span className="photo-thumb-stt" style={isReorderMode?{left:'44px'}:{}}>{idx + 1}</span>
 
           {/* Trạng thái chọn — góc trên phải (chỉ hiện khi chọn nhiều) */}
           {isSelectionMode && (
@@ -5036,6 +5074,8 @@
       const [showPhotoMenu, setShowPhotoMenu] = useState(false);
       // ── Chế độ chọn nhiều ảnh (Prompt 14.5) ──
       const [isSelectionMode, setIsSelectionMode] = useState(false);
+      const [isReorderMode, setIsReorderMode] = useState(false); // P51
+      const dragReorderRef = React.useRef({active:false,dragId:null,overId:null});
       const [selectedImageIds, setSelectedImageIds] = useState([]);
       const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
 
@@ -5261,6 +5301,14 @@
                     <span>＋</span> Thêm ảnh
                   </button>
                 )}
+                {!isSelectionMode && (
+                  <button
+                    className={`btn-select-mode${isReorderMode ? ' active' : ''}`}
+                    onClick={function(){setIsReorderMode(function(v){return !v;});}}
+                  >
+                    {isReorderMode ? 'Xong' : '⇅ Sắp xếp'}
+                  </button>
+                )}
                 <button
                   className={`btn-select-mode${isSelectionMode ? ' active' : ''}`}
                   onClick={isSelectionMode ? exitSelectionMode : enterSelectionMode}
@@ -5398,6 +5446,7 @@
           {imgCount > 0 && (
             <div
               className="photo-grid"
+              onDragOver={function(e){e.preventDefault();}}
               data-selecting={isSelectionMode ? "true" : undefined}
               onPointerDown={handleGridPointerDown}
               onPointerMove={handleGridPointerMove}
@@ -5415,6 +5464,20 @@
                   isSelectionMode={isSelectionMode}
                   isSelected={selectedImageIds.includes(img.imageId)}
                   onToggleSelect={toggleSelect}
+                  isReorderMode={isReorderMode}
+                  onDragStart={function(id){dragReorderRef.current={active:true,dragId:id,overId:id};}}
+                  onDragEnter={function(id){if(dragReorderRef.current.active)dragReorderRef.current.overId=id;}}
+                  onDragEnd={function(){
+                    var ref=dragReorderRef.current;
+                    if(!ref.active||!ref.dragId||!ref.overId||ref.dragId===ref.overId){ref.active=false;return;}
+                    var ids=images.map(function(i){return i.imageId;});
+                    var fi=ids.indexOf(ref.dragId), ti=ids.indexOf(ref.overId);
+                    if(fi<0||ti<0){ref.active=false;return;}
+                    ids.splice(fi,1); ids.splice(ti,0,ref.dragId);
+                    reorderImages(projectId,ids);
+                    loadImages();
+                    ref.active=false;
+                  }}
                 />
               ))}
             </div>
