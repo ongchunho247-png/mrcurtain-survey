@@ -1592,7 +1592,7 @@
     // =============================================
     // STORAGE UTILS
     // =============================================
-    const APP_PROMPT_VERSION = 'P51'; // Cập nhật khi lên version mới
+    const APP_PROMPT_VERSION = 'P52'; // Cập nhật khi lên version mới
     const STORAGE_KEY = 'mrcurtain_survey_projects';
     const STORAGE_KEY_LEGACY = 'mrcurtain_projects'; // key cũ từ Prompt 2
     // Khai báo sớm để runDataMigration() dùng được (Prompt 14.2)
@@ -4919,7 +4919,7 @@
     }
 
     /* --- Thumbnail card với tóm tắt thông tin --- */
-    function PhotoThumbCard({ img, idx, onSelect, onDelete, isSelectionMode, isSelected, onToggleSelect, isReorderMode, onDragStart, onDragEnter, onDragEnd }) {
+    function PhotoThumbCard({ img, idx, onSelect, onDelete, isSelectionMode, isSelected, onToggleSelect, dragState, onLongPress, onDragOver, onDragDrop }) {
       const size         = sizeLabel(img);
       const isProduction = img.status === 'production';
       const statusLabel  = isProduction ? 'Sản xuất' : 'Khảo sát';
@@ -4931,25 +4931,32 @@
 
       return (
         <div
-          className={`photo-thumb-card${isSelected ? ' selected' : ''}`}
+          className={`photo-thumb-card${isSelected ? ' selected' : ''}${dragState&&dragState.dragId===img.imageId?' dragging':''}${dragState&&dragState.overId===img.imageId&&dragState.dragId!==img.imageId?' drag-over':''}`}
           data-image-id={img.imageId}
-          onClick={function(){ if(!isSelectionMode && !isReorderMode) onSelect(img.imageId); }}
           role="button"
-          aria-label={isSelectionMode ? `${isSelected ? 'Bỏ chọn' : 'Chọn'} ảnh ${idx + 1}` : `Xem thông tin ảnh ${idx + 1}`}
-          style={{cursor: isReorderMode ? 'default' : 'pointer', position:'relative'}}
-          onDragOver={isReorderMode ? function(e){e.preventDefault();if(onDragEnter)onDragEnter(img.imageId);} : undefined}
+          style={{cursor:'pointer',position:'relative',touchAction:'auto'}}
+          onClick={function(e){ if(!isSelectionMode && !(dragState&&dragState.wasDragging)) onSelect(img.imageId); }}
+          onPointerDown={function(e){
+            if(isSelectionMode) return;
+            var el=e.currentTarget, pid=e.pointerId, moved=false;
+            var sx=e.clientX, sy=e.clientY;
+            var t=setTimeout(function(){
+              if(moved) return;
+              if(navigator.vibrate) navigator.vibrate(30);
+              onLongPress && onLongPress(img.imageId, pid, el);
+            }, 380);
+            function onMove(ev){
+              if(Math.abs(ev.clientX-sx)>8||Math.abs(ev.clientY-sy)>8){ moved=true; clearTimeout(t); }
+            }
+            function onUp(){ clearTimeout(t); document.removeEventListener('pointermove',onMove); document.removeEventListener('pointerup',onUp); }
+            document.addEventListener('pointermove',onMove);
+            document.addEventListener('pointerup',onUp);
+          }}
+          onDragOver={function(e){e.preventDefault(); onDragOver&&onDragOver(img.imageId);}}
+          onDrop={function(e){e.preventDefault(); onDragDrop&&onDragDrop(img.imageId);}}
         >
-          {/* P51: drag handle khi reorder mode */}
-          {isReorderMode && (
-            <div className="reorder-handle"
-              draggable={true}
-              onDragStart={function(e){e.dataTransfer.effectAllowed='move';if(onDragStart)onDragStart(img.imageId);}}
-              onDragEnd={function(){if(onDragEnd)onDragEnd();}}
-              onPointerDown={function(e){e.stopPropagation();}}
-            >⠿</div>
-          )}
           {/* Badge STT — góc trên trái */}
-          <span className="photo-thumb-stt" style={isReorderMode?{left:'44px'}:{}}>{idx + 1}</span>
+          <span className="photo-thumb-stt">{idx + 1}</span>
 
           {/* Trạng thái chọn — góc trên phải (chỉ hiện khi chọn nhiều) */}
           {isSelectionMode && (
@@ -5301,14 +5308,6 @@
                     <span>＋</span> Thêm ảnh
                   </button>
                 )}
-                {!isSelectionMode && (
-                  <button
-                    className={`btn-select-mode${isReorderMode ? ' active' : ''}`}
-                    onClick={function(){setIsReorderMode(function(v){return !v;});}}
-                  >
-                    {isReorderMode ? 'Xong' : '⇅ Sắp xếp'}
-                  </button>
-                )}
                 <button
                   className={`btn-select-mode${isSelectionMode ? ' active' : ''}`}
                   onClick={isSelectionMode ? exitSelectionMode : enterSelectionMode}
@@ -5464,19 +5463,29 @@
                   isSelectionMode={isSelectionMode}
                   isSelected={selectedImageIds.includes(img.imageId)}
                   onToggleSelect={toggleSelect}
-                  isReorderMode={isReorderMode}
-                  onDragStart={function(id){dragReorderRef.current={active:true,dragId:id,overId:id};}}
-                  onDragEnter={function(id){if(dragReorderRef.current.active)dragReorderRef.current.overId=id;}}
-                  onDragEnd={function(){
+                  dragState={dragReorderRef.current.active ? dragReorderRef.current : null}
+                  onLongPress={function(id, pid, el){
+                    dragReorderRef.current = {active:true, dragId:id, overId:id, wasDragging:false};
+                    el.setAttribute('draggable','true');
+                    // force re-render
+                    setImages(function(prev){ return prev.slice(); });
+                  }}
+                  onDragOver={function(id){
+                    if(dragReorderRef.current.active && dragReorderRef.current.dragId!==id){
+                      dragReorderRef.current.overId=id;
+                      setImages(function(prev){ return prev.slice(); });
+                    }
+                  }}
+                  onDragDrop={function(id){
                     var ref=dragReorderRef.current;
-                    if(!ref.active||!ref.dragId||!ref.overId||ref.dragId===ref.overId){ref.active=false;return;}
+                    if(!ref.active||!ref.dragId||ref.dragId===id){ref.active=false;return;}
                     var ids=images.map(function(i){return i.imageId;});
-                    var fi=ids.indexOf(ref.dragId), ti=ids.indexOf(ref.overId);
+                    var fi=ids.indexOf(ref.dragId), ti=ids.indexOf(id);
                     if(fi<0||ti<0){ref.active=false;return;}
                     ids.splice(fi,1); ids.splice(ti,0,ref.dragId);
                     reorderImages(projectId,ids);
+                    ref.active=false; ref.dragId=null; ref.overId=null;
                     loadImages();
-                    ref.active=false;
                   }}
                 />
               ))}
