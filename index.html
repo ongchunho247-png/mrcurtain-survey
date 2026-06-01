@@ -1593,7 +1593,7 @@
     // =============================================
     // STORAGE UTILS
     // =============================================
-    const APP_PROMPT_VERSION = 'P65'; // Cập nhật khi lên version mới
+    const APP_PROMPT_VERSION = 'P66'; // Cập nhật khi lên version mới
     const STORAGE_KEY = 'mrcurtain_survey_projects';
     const STORAGE_KEY_LEGACY = 'mrcurtain_projects'; // key cũ từ Prompt 2
     // Khai báo sớm để runDataMigration() dùng được (Prompt 14.2)
@@ -4005,11 +4005,23 @@
       var [val, setVal] = React.useState(String(value||''));
       function evalExpr(s) {
         try {
-          var clean = s.replace(/×/g,'*').replace(/÷/g,'/').replace(/,/g,'.');
-          if(!/^[\d.+\-*\/\s]+$/.test(clean)) return s;
-          // eslint-disable-next-line no-new-func
-          var r = Function('return (' + clean + ')')();
-          return isNaN(r) ? s : String(Math.round(r * 100) / 100);
+          // Parse +/- groups, then */ within each group
+          var clean = s.replace(/×/g,'*').replace(/÷/g,'/').replace(/,/g,'.').replace(/\s/g,'');
+          if(!/^[\d.+\-*/]+$/.test(clean)) return s;
+          // Split by + (keep - as negative)
+          var terms = clean.replace(/([+\-])/g, ' ').trim().split(/\s+/);
+          var total = 0;
+          terms.forEach(function(t){
+            if(!t) return;
+            // handle */ within term
+            var sign = (t[0]==='-') ? -1 : 1;
+            var t2 = (t[0]==='+' || t[0]==='-') ? t.slice(1) : t;
+            var parts = t2.split('*');
+            var val = parseFloat(parts[0]||0);
+            for(var i=1;i<parts.length;i++) val *= parseFloat(parts[i]||1);
+            total += sign * val;
+          });
+          return isNaN(total) ? s : String(Math.round(total * 100) / 100);
         } catch(e) { return s; }
       }
       var btns = [
