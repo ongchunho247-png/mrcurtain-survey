@@ -1609,7 +1609,7 @@
     // =============================================
     // STORAGE UTILS
     // =============================================
-    const APP_PROMPT_VERSION = 'P70'; // Cập nhật khi lên version mới
+    const APP_PROMPT_VERSION = 'P71'; // Cập nhật khi lên version mới
     const STORAGE_KEY = 'mrcurtain_survey_projects';
     const STORAGE_KEY_LEGACY = 'mrcurtain_projects'; // key cũ từ Prompt 2
     // Khai báo sớm để runDataMigration() dùng được (Prompt 14.2)
@@ -4070,16 +4070,22 @@
       return React.createElement('input', {
         ref: inp,
         type: 'text',
+        inputMode: 'text',
         defaultValue: initVal,
         placeholder: '1,2...',
+        onFocus: function(e){
+          // P71: scroll into view so keyboard doesn't push it off-screen
+          setTimeout(function(){ if(inp.current) inp.current.scrollIntoView({behavior:'smooth',block:'center'}); }, 300);
+        },
         onBlur: function(e){ onSave(e.target.value); },
         onKeyDown: function(e){ if(e.key==='Enter'){e.preventDefault();e.target.blur();} },
-        onClick: function(e){ e.stopPropagation(); },
+        onClick: function(e){ e.stopPropagation(); e.nativeEvent&&e.nativeEvent.stopImmediatePropagation&&e.nativeEvent.stopImmediatePropagation(); },
         onPointerDown: function(e){ e.stopPropagation(); },
         onTouchStart: function(e){ e.stopPropagation(); },
-        style: {width:52,padding:'5px 7px',fontSize:13,borderRadius:6,
+        onTouchEnd: function(e){ e.stopPropagation(); },
+        style: {width:64,padding:'8px 10px',fontSize:15,borderRadius:6,
           border:'1.5px solid var(--primary)',background:'var(--bg)',color:'var(--text)',
-          verticalAlign:'middle',marginLeft:2}
+          display:'block',minHeight:38}
       });
     }
 
