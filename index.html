@@ -1609,7 +1609,7 @@
     // =============================================
     // STORAGE UTILS
     // =============================================
-    const APP_PROMPT_VERSION = 'P69'; // Cập nhật khi lên version mới
+    const APP_PROMPT_VERSION = 'P70'; // Cập nhật khi lên version mới
     const STORAGE_KEY = 'mrcurtain_survey_projects';
     const STORAGE_KEY_LEGACY = 'mrcurtain_projects'; // key cũ từ Prompt 2
     // Khai báo sớm để runDataMigration() dùng được (Prompt 14.2)
@@ -4499,6 +4499,7 @@
       const [image, setImage]       = useState(null);
       const [notFound, setNotFound] = useState(false);
       const [form, setForm]         = useState({...EMPTY_FORM});
+      const [calcPad, setCalcPad]   = useState(null); // P63: calculator keypad
       const [saving, setSaving]     = useState(false);
       const [saved, setSaved]       = useState(false);       // flash success
       const [pendingPreview, setPendingPreview] = useState(null); // ảnh mới chưa lưu
