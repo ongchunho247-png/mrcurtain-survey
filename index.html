@@ -1592,7 +1592,7 @@
     // =============================================
     // STORAGE UTILS
     // =============================================
-    const APP_PROMPT_VERSION = 'P55'; // Cập nhật khi lên version mới
+    const APP_PROMPT_VERSION = 'P56'; // Cập nhật khi lên version mới
     const STORAGE_KEY = 'mrcurtain_survey_projects';
     const STORAGE_KEY_LEGACY = 'mrcurtain_projects'; // key cũ từ Prompt 2
     // Khai báo sớm để runDataMigration() dùng được (Prompt 14.2)
@@ -2982,7 +2982,10 @@
       return img.productSpec || 'Chưa có';
     }
     function getSizeDisplay(img) {
-      if (img.width && img.height) return `${img.width} × ${img.height} ${img.unit || 'mm'}`;
+      var parts = [];
+      if(img.width && img.height) parts.push(img.width + ' × ' + img.height);
+      if(Array.isArray(img.extraSizes)) img.extraSizes.forEach(function(s){ if(s.width&&s.height) parts.push(s.width+' × '+s.height); });
+      if(parts.length) return parts.join(' | ') + ' ' + (img.unit||'mm');
       return 'Chưa có kích thước';
     }
     function sanitizeFileName(s) {
@@ -3009,7 +3012,10 @@
         var pos   = (Array.isArray(img.positions)&&img.positions.length)?img.positions.join(' - '):(img.position||'Chua co');
         var curtain=(Array.isArray(img.curtainTypes)&&img.curtainTypes.length)?img.curtainTypes.join(' | '):(img.curtainType||'Chua co');
         var spec  = (Array.isArray(img.productSpecs)&&img.productSpecs.length)?img.productSpecs.join(' | '):(img.productSpec||'Chua co');
-        var size  = (img.width&&img.height)?(img.width+' x '+img.height+' '+(img.unit||'mm')):'Chua co';
+        var _szParts=[];
+        if(img.width&&img.height)_szParts.push(img.width+' x '+img.height);
+        if(Array.isArray(img.extraSizes))img.extraSizes.forEach(function(s){if(s.width&&s.height)_szParts.push(s.width+' x '+s.height);});
+        var size=_szParts.length?_szParts.join(' | ')+' '+  (img.unit||'mm'):'Chua co';
         var tags  = (Array.isArray(img.tags)&&img.tags.length)?img.tags.join(' | '):'Khong co';
         var note  = joinLines(img.notes)||'Khong co';
         var rows  = [['Tinh trang',sLbl],['Vi tri',pos],['Loai rem',curtain],
@@ -3964,6 +3970,7 @@
       position: '', area: '', curtainType: '',
       productSpec: '', usageSpec: '', installationSpec: '',
       width: '', height: '', unit: 'mm',
+      extraSizes: [],
       notes: '', tags: [],
     };
 
@@ -4436,6 +4443,7 @@
           width:            img.width            || '',
           height:      img.height      || '',
           unit:        img.unit        || 'mm',
+          extraSizes:  Array.isArray(img.extraSizes) ? [...img.extraSizes] : [],
           notes:       img.notes       || '',
           tags:        Array.isArray(img.tags) ? [...img.tags] : [],
         });
@@ -4536,6 +4544,7 @@
             width:            form.width,
             height:      form.height,
             unit:        form.unit || 'mm',
+            extraSizes:  form.extraSizes,
             notes:       form.notes,
             tags:        form.tags,
             annotations: annotations,
@@ -4906,33 +4915,60 @@
               );
             })}
 
-            {/* ── Kích thước ── */}
+            {/* ── Kích thước (P56: multi-size) ── */}
             <div className="idf-section">
-              <div className="idf-section-title">Kích thước</div>
+              <div className="idf-section-title" style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                <span>Kích thước</span>
+                <span style={{fontSize:11,color:'var(--text-secondary)'}}>mm</span>
+              </div>
+              {/* Hàng kích thước đầu tiên */}
               <div className="size-row">
                 <div className="size-input-wrap">
                   <div className="size-input-label">Ngang</div>
-                  <input
-                    type="text" inputMode="numeric" pattern="[0-9.,]*"
-                    name="width" className="size-input"
-                    placeholder="0"
-                    value={form.width}
-                    onChange={handleSizeInput}
-                  />
+                  <input type="text" inputMode="numeric" pattern="[0-9.,]*"
+                    name="width" className="size-input" placeholder="0"
+                    value={form.width} onChange={handleSizeInput}/>
                 </div>
                 <div className="size-sep">×</div>
                 <div className="size-input-wrap">
                   <div className="size-input-label">Cao</div>
-                  <input
-                    type="text" inputMode="numeric" pattern="[0-9.,]*"
-                    name="height" className="size-input"
-                    placeholder="0"
-                    value={form.height}
-                    onChange={handleSizeInput}
-                  />
+                  <input type="text" inputMode="numeric" pattern="[0-9.,]*"
+                    name="height" className="size-input" placeholder="0"
+                    value={form.height} onChange={handleSizeInput}/>
                 </div>
-                <div className="size-unit">mm</div>
+                <button type="button" onClick={function(){setForm(function(p){return {...p,extraSizes:[...p.extraSizes,{width:'',height:''}]};});}}
+                  style={{background:'none',border:'none',color:'var(--primary)',fontSize:22,cursor:'pointer',padding:'0 4px',lineHeight:1}}>＋</button>
               </div>
+              {/* Các hàng kích thước thêm */}
+              {form.extraSizes.map(function(sz,i){
+                return (
+                  <div key={i} className="size-row" style={{marginTop:6}}>
+                    <div className="size-input-wrap">
+                      <div className="size-input-label">Ngang {i+2}</div>
+                      <input type="text" inputMode="numeric" pattern="[0-9.,]*"
+                        className="size-input" placeholder="0"
+                        value={sz.width}
+                        onChange={function(e){
+                          var v=e.target.value.replace(/[^\d.,]/g,'');
+                          setForm(function(p){var es=[...p.extraSizes];es[i]={...es[i],width:v};return {...p,extraSizes:es};});
+                        }}/>
+                    </div>
+                    <div className="size-sep">×</div>
+                    <div className="size-input-wrap">
+                      <div className="size-input-label">Cao {i+2}</div>
+                      <input type="text" inputMode="numeric" pattern="[0-9.,]*"
+                        className="size-input" placeholder="0"
+                        value={sz.height}
+                        onChange={function(e){
+                          var v=e.target.value.replace(/[^\d.,]/g,'');
+                          setForm(function(p){var es=[...p.extraSizes];es[i]={...es[i],height:v};return {...p,extraSizes:es};});
+                        }}/>
+                    </div>
+                    <button type="button" onClick={function(){setForm(function(p){var es=p.extraSizes.filter(function(_,j){return j!==i;});return {...p,extraSizes:es};});}}
+                      style={{background:'none',border:'none',color:'var(--danger)',fontSize:20,cursor:'pointer',padding:'0 4px',lineHeight:1}}>−</button>
+                  </div>
+                );
+              })}
             </div>
 
             {/* ── Ghi chú thêm ── */}
