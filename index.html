@@ -1585,7 +1585,7 @@
     // =============================================
     // STORAGE UTILS
     // =============================================
-    const APP_PROMPT_VERSION = 'P49'; // Cập nhật khi lên version mới
+    const APP_PROMPT_VERSION = 'P50'; // Cập nhật khi lên version mới
     const STORAGE_KEY = 'mrcurtain_survey_projects';
     const STORAGE_KEY_LEGACY = 'mrcurtain_projects'; // key cũ từ Prompt 2
     // Khai báo sớm để runDataMigration() dùng được (Prompt 14.2)
@@ -6005,7 +6005,7 @@
           });
 
           /* P49: scale 1.5 mobile (đủ nét), timeout 90s phòng treo */
-          const SCALE = window.innerWidth < 768 ? 1.5 : 2;
+          const SCALE = window.innerWidth < 768 ? 2 : 2;
           const canvas = await Promise.race([
             html2canvas(container, {
               scale: SCALE, useCORS: true, allowTaint: true, backgroundColor: '#ffffff',
