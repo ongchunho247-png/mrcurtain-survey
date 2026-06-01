@@ -1593,7 +1593,7 @@
     // =============================================
     // STORAGE UTILS
     // =============================================
-    const APP_PROMPT_VERSION = 'P63'; // Cập nhật khi lên version mới
+    const APP_PROMPT_VERSION = 'P64'; // Cập nhật khi lên version mới
     const STORAGE_KEY = 'mrcurtain_survey_projects';
     const STORAGE_KEY_LEGACY = 'mrcurtain_projects'; // key cũ từ Prompt 2
     // Khai báo sớm để runDataMigration() dùng được (Prompt 14.2)
@@ -5295,10 +5295,14 @@
               </div>
             )}
 
-            {/* Dòng 5: kích thước */}
-            <span className={`thumb-size-text${!size ? ' empty' : ''}`}>
-              {size || 'Chưa có kích thước'}
-            </span>
+            {/* Dòng 5: kích thước — P64 */}
+            {size ? (
+              <span className="thumb-size-text">
+                {size.lines.map(function(ln,i){return <span key={i} style={{display:'block'}}>{ln}{i===size.lines.length-1?' '+size.unit:''}</span>;})}
+              </span>
+            ) : (
+              <span className="thumb-size-text empty">Chưa có kích thước</span>
+            )}
 
             {/* Dòng 6: ghi chú (chỉ hiện nếu có) */}
             {img.notes && (
