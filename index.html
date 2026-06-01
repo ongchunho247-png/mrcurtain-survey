@@ -1593,7 +1593,7 @@
     // =============================================
     // STORAGE UTILS
     // =============================================
-    const APP_PROMPT_VERSION = 'P62'; // Cập nhật khi lên version mới
+    const APP_PROMPT_VERSION = 'P63'; // Cập nhật khi lên version mới
     const STORAGE_KEY = 'mrcurtain_survey_projects';
     const STORAGE_KEY_LEGACY = 'mrcurtain_projects'; // key cũ từ Prompt 2
     // Khai báo sớm để runDataMigration() dùng được (Prompt 14.2)
@@ -3984,6 +3984,71 @@
     };
 
 
+    /* P63: CalcPad — custom calculator keypad */
+    .calcpad-overlay { position:fixed;bottom:0;left:0;right:0;z-index:600;
+      background:var(--bg-card);border-top:1px solid var(--border);
+      padding:8px 12px 20px;box-shadow:0 -4px 20px rgba(0,0,0,0.3); }
+    .calcpad-display { background:var(--bg);border:1.5px solid var(--border);border-radius:8px;
+      padding:10px 14px;font-size:20px;font-weight:700;color:var(--text);
+      min-height:46px;text-align:right;margin-bottom:8px;word-break:break-all; }
+    .calcpad-grid { display:grid;grid-template-columns:repeat(4,1fr);gap:6px; }
+    .calcpad-btn { padding:14px 0;border-radius:8px;border:none;font-size:18px;font-weight:700;
+      cursor:pointer;text-align:center;background:var(--bg);color:var(--text);
+      border:1px solid var(--border);touch-action:manipulation; }
+    .calcpad-btn.op { background:var(--primary-light);color:var(--primary); }
+    .calcpad-btn.confirm { background:var(--primary);color:#fff;grid-column:span 2; }
+    .calcpad-btn.del { background:#fef2f2;color:var(--danger); }
+    .calcpad-btn:active { opacity:0.7; }
+
+    /* ── P63: CalcPad component ── */
+    function CalcPad({ value, label, onConfirm, onClose }) {
+      var [val, setVal] = React.useState(String(value||''));
+      function evalExpr(s) {
+        try {
+          var clean = s.replace(/×/g,'*').replace(/÷/g,'/').replace(/,/g,'.');
+          if(!/^[\d.+\-*\/\s]+$/.test(clean)) return s;
+          // eslint-disable-next-line no-new-func
+          var r = Function('return (' + clean + ')')();
+          return isNaN(r) ? s : String(Math.round(r * 100) / 100);
+        } catch(e) { return s; }
+      }
+      var btns = [
+        '7','8','9','÷',
+        '4','5','6','×',
+        '1','2','3','-',
+        '0','.','⌫','+',
+      ];
+      function press(k) {
+        if(k==='⌫') { setVal(function(v){ return v.slice(0,-1); }); return; }
+        setVal(function(v){ return v+k; });
+      }
+      function confirm() {
+        var result = evalExpr(val);
+        onConfirm(result);
+      }
+      return (
+        <div className="calcpad-overlay" onClick={function(e){e.stopPropagation();}}>
+          <div style={{fontSize:11,color:'var(--text-secondary)',marginBottom:4}}>{label}</div>
+          <div className="calcpad-display">{val||'0'}</div>
+          <div className="calcpad-grid">
+            {btns.map(function(k){
+              var isOp = '÷×-+'.includes(k);
+              var isDel = k==='⌫';
+              return <button key={k} type="button"
+                className={'calcpad-btn'+(isOp?' op':isDel?' del':'')}
+                onPointerDown={function(e){e.preventDefault();press(k);}}>
+                {k}
+              </button>;
+            })}
+            <button type="button" className="calcpad-btn confirm"
+              onPointerDown={function(e){e.preventDefault();confirm();}}>✓ Xong</button>
+            <button type="button" className="calcpad-btn del"
+              onPointerDown={function(e){e.preventDefault();onClose();}}>Bỏ</button>
+          </div>
+        </div>
+      );
+    }
+
     /* ── P59: SuffixInput — isolated state, no parent re-render on type ── */
     function SuffixInput({ fieldName, base, initVal, onSave }) {
       var inp = React.useRef(null);
@@ -4976,16 +5041,18 @@
               <div className="size-row">
                 <div className="size-input-wrap">
                   <div className="size-input-label">Ngang</div>
-                  <input type="text" inputMode="text"
+                  <input type="text" readOnly
                     name="width" className="size-input" placeholder="0"
-                    value={form.width} onChange={handleSizeInput} onBlur={handleSizeBlur}/>
+                    value={form.width}
+                    onFocus={function(){setCalcPad({field:'width',idx:-1,label:'Ngang',value:form.width});}}/>
                 </div>
                 <div className="size-sep">×</div>
                 <div className="size-input-wrap">
                   <div className="size-input-label">Cao</div>
-                  <input type="text" inputMode="text"
+                  <input type="text" readOnly
                     name="height" className="size-input" placeholder="0"
-                    value={form.height} onChange={handleSizeInput} onBlur={handleSizeBlur}/>
+                    value={form.height}
+                    onFocus={function(){setCalcPad({field:'height',idx:-1,label:'Cao',value:form.height});}}/>
                 </div>
                 <button type="button" onClick={function(){setForm(function(p){return {...p,extraSizes:[...p.extraSizes,{width:'',height:''}]};});}}
                   style={{background:'none',border:'none',color:'var(--primary)',fontSize:22,cursor:'pointer',padding:'0 4px',lineHeight:1}}>＋</button>
@@ -4996,32 +5063,18 @@
                   <div key={i} className="size-row" style={{marginTop:6}}>
                     <div className="size-input-wrap">
                       <div className="size-input-label">Ngang {i+2}</div>
-                      <input type="text"
+                      <input type="text" readOnly
                         className="size-input" placeholder="0"
                         value={sz.width}
-                        onChange={function(e){
-                          var v=e.target.value.replace(/[^\d.,+\-]/g,'');
-                          setForm(function(p){var es=[...p.extraSizes];es[i]={...es[i],width:v};return {...p,extraSizes:es};});
-                        }}
-                        onBlur={function(e){
-                          var v=evalSizeExpr(e.target.value);
-                          setForm(function(p){var es=[...p.extraSizes];es[i]={...es[i],width:v};return {...p,extraSizes:es};});
-                        }}/>
+                        onFocus={function(){setCalcPad({field:'ew',idx:i,label:'Ngang '+(i+2),value:sz.width});}}/>
                     </div>
                     <div className="size-sep">×</div>
                     <div className="size-input-wrap">
                       <div className="size-input-label">Cao {i+2}</div>
-                      <input type="text"
+                      <input type="text" readOnly
                         className="size-input" placeholder="0"
                         value={sz.height}
-                        onChange={function(e){
-                          var v=e.target.value.replace(/[^\d.,+\-]/g,'');
-                          setForm(function(p){var es=[...p.extraSizes];es[i]={...es[i],height:v};return {...p,extraSizes:es};});
-                        }}
-                        onBlur={function(e){
-                          var v=evalSizeExpr(e.target.value);
-                          setForm(function(p){var es=[...p.extraSizes];es[i]={...es[i],height:v};return {...p,extraSizes:es};});
-                        }}/>
+                        onFocus={function(){setCalcPad({field:'eh',idx:i,label:'Cao '+(i+2),value:sz.height});}}/>
                     </div>
                     <button type="button" onClick={function(){setForm(function(p){var es=p.extraSizes.filter(function(_,j){return j!==i;});return {...p,extraSizes:es};});}}
                       style={{background:'none',border:'none',color:'var(--danger)',fontSize:20,cursor:'pointer',padding:'0 4px',lineHeight:1}}>−</button>
@@ -5040,6 +5093,22 @@
                 onChange={e => setForm(prev => ({...prev, notes: e.target.value}))}
               />
             </div>
+
+            {/* ── P63: CalcPad overlay ── */}
+            {calcPad && (
+              <CalcPad
+                value={calcPad.value}
+                label={calcPad.label}
+                onConfirm={function(v){
+                  if(calcPad.field==='width') setForm(function(p){return {...p,width:v};});
+                  else if(calcPad.field==='height') setForm(function(p){return {...p,height:v};});
+                  else if(calcPad.field==='ew') setForm(function(p){var es=[...p.extraSizes];es[calcPad.idx]={...es[calcPad.idx],width:v};return {...p,extraSizes:es};});
+                  else if(calcPad.field==='eh') setForm(function(p){var es=[...p.extraSizes];es[calcPad.idx]={...es[calcPad.idx],height:v};return {...p,extraSizes:es};});
+                  setCalcPad(null);
+                }}
+                onClose={function(){setCalcPad(null);}}
+              />
+            )}
 
             {/* ── Nút lưu ── */}
             <div className="form-actions">
