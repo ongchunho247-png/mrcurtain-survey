@@ -1609,7 +1609,7 @@
     // =============================================
     // STORAGE UTILS
     // =============================================
-    const APP_PROMPT_VERSION = 'P67'; // Cập nhật khi lên version mới
+    const APP_PROMPT_VERSION = 'P68'; // Cập nhật khi lên version mới
     const STORAGE_KEY = 'mrcurtain_survey_projects';
     const STORAGE_KEY_LEGACY = 'mrcurtain_projects'; // key cũ từ Prompt 2
     // Khai báo sớm để runDataMigration() dùng được (Prompt 14.2)
@@ -7450,9 +7450,23 @@
       );
     }
 
-    // ── Mount ─────────────────────────────────────────────────
+    /* P68: ErrorBoundary — catch render errors, show message instead of black screen */
+    class ErrorBoundary extends React.Component {
+      constructor(props){ super(props); this.state={hasError:false,msg:''}; }
+      static getDerivedStateFromError(e){ return {hasError:true,msg:String(e)}; }
+      componentDidCatch(e,info){ console.error('ErrorBoundary caught:',e,info); }
+      render(){
+        if(this.state.hasError) return React.createElement('div',{style:{padding:24,color:'#ef4444',background:'var(--bg)',minHeight:'100vh',fontFamily:'Arial'}},
+          React.createElement('h2',null,'Lỗi hiển thị'),
+          React.createElement('pre',{style:{fontSize:12,wordBreak:'break-all',whiteSpace:'pre-wrap'}},this.state.msg)
+        );
+        return this.props.children;
+      }
+    }
+
+        // ── Mount ─────────────────────────────────────────────────
     const rootEl = document.getElementById("root");
-    ReactDOM.createRoot(rootEl).render(<App />);
+    ReactDOM.createRoot(rootEl).render(<ErrorBoundary><App /></ErrorBoundary>);
   </script>
 </body>
 </html>
