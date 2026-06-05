@@ -1609,7 +1609,7 @@
     // =============================================
     // STORAGE UTILS
     // =============================================
-    const APP_PROMPT_VERSION = 'P73'; // Cập nhật khi lên version mới
+    const APP_PROMPT_VERSION = 'P74'; // Cập nhật khi lên version mới
     const STORAGE_KEY = 'mrcurtain_survey_projects';
     const STORAGE_KEY_LEGACY = 'mrcurtain_projects'; // key cũ từ Prompt 2
     // Khai báo sớm để runDataMigration() dùng được (Prompt 14.2)
@@ -7363,8 +7363,8 @@
       useEffect(() => {
         let sx = 0, sy = 0;
         function onTouchStart(e) {
-          // P73: reset sx so stale value never triggers back on overlay-close
-          sx = -9999; sy = -9999;
+          // P73fix: reset to large value so dx = endX - 9999 < 0, never triggers back
+          sx = 9999; sy = 9999;
           const tag = e.target.tagName;
           if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
           if (document.querySelector('.modal-overlay')) return;
