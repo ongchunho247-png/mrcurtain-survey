@@ -1609,7 +1609,7 @@
     // =============================================
     // STORAGE UTILS
     // =============================================
-    const APP_PROMPT_VERSION = 'P76'; // Cập nhật khi lên version mới
+    const APP_PROMPT_VERSION = 'P77'; // Cập nhật khi lên version mới
     const STORAGE_KEY = 'mrcurtain_survey_projects';
     const STORAGE_KEY_LEGACY = 'mrcurtain_projects'; // key cũ từ Prompt 2
     // Khai báo sớm để runDataMigration() dùng được (Prompt 14.2)
@@ -5063,7 +5063,8 @@
                   <input type="text" readOnly
                     name="width" className="size-input" placeholder="0"
                     value={form.width}
-                    onFocus={function(){setCalcPad({field:'width',idx:-1,label:'Ngang',value:form.width});}}/>
+                    onFocus={function(){setCalcPad({field:'width',idx:-1,label:'Ngang',value:form.width});}}
+                    onTouchEnd={function(e){e.preventDefault();setCalcPad({field:'width',idx:-1,label:'Ngang',value:form.width});}}/>
                 </div>
                 <div className="size-sep">×</div>
                 <div className="size-input-wrap">
@@ -5071,7 +5072,8 @@
                   <input type="text" readOnly
                     name="height" className="size-input" placeholder="0"
                     value={form.height}
-                    onFocus={function(){setCalcPad({field:'height',idx:-1,label:'Cao',value:form.height});}}/>
+                    onFocus={function(){setCalcPad({field:'height',idx:-1,label:'Cao',value:form.height});}}
+                    onTouchEnd={function(e){e.preventDefault();setCalcPad({field:'height',idx:-1,label:'Cao',value:form.height});}}/>
                 </div>
                 <button type="button" onClick={function(){setForm(function(p){return {...p,extraSizes:[...p.extraSizes,{width:'',height:''}]};});}}
                   style={{background:'none',border:'none',color:'var(--primary)',fontSize:22,cursor:'pointer',padding:'0 4px',lineHeight:1}}>＋</button>
@@ -5085,7 +5087,8 @@
                       <input type="text" readOnly
                         className="size-input" placeholder="0"
                         value={sz.width}
-                        onFocus={function(){setCalcPad({field:'ew',idx:i,label:'Ngang '+(i+2),value:sz.width});}}/>
+                        onFocus={function(){setCalcPad({field:'ew',idx:i,label:'Ngang '+(i+2),value:sz.width});}}
+                        onTouchEnd={function(e){e.preventDefault();setCalcPad({field:'ew',idx:i,label:'Ngang '+(i+2),value:sz.width});}}/>
                     </div>
                     <div className="size-sep">×</div>
                     <div className="size-input-wrap">
@@ -5093,7 +5096,8 @@
                       <input type="text" readOnly
                         className="size-input" placeholder="0"
                         value={sz.height}
-                        onFocus={function(){setCalcPad({field:'eh',idx:i,label:'Cao '+(i+2),value:sz.height});}}/>
+                        onFocus={function(){setCalcPad({field:'eh',idx:i,label:'Cao '+(i+2),value:sz.height});}}
+                        onTouchEnd={function(e){e.preventDefault();setCalcPad({field:'eh',idx:i,label:'Cao '+(i+2),value:sz.height});}}/>
                     </div>
                     <button type="button" onClick={function(){setForm(function(p){var es=p.extraSizes.filter(function(_,j){return j!==i;});return {...p,extraSizes:es};});}}
                       style={{background:'none',border:'none',color:'var(--danger)',fontSize:20,cursor:'pointer',padding:'0 4px',lineHeight:1}}>−</button>
@@ -7370,6 +7374,8 @@
           if (document.querySelector('.ann-editor-overlay')) return;
           if (document.querySelector('.calcpad-overlay')) return;
           if (document.querySelector('.photo-menu-overlay')) return;
+          // P77: any touch inside a size-row (label, input, ×, +/- buttons) must not trigger back
+          if (e.target.closest('.size-row')) return;
           if (e.target.closest('[data-selecting="true"]')) return;
           sx = e.touches[0].clientX;
           sy = e.touches[0].clientY;
