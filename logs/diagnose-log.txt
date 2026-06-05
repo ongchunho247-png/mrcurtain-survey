@@ -1613,3 +1613,12 @@ Hash    : 21eac2c P30: Arrow rotate-by-endpoint, text double-tap-to-edit, single
 Remote  : https://github.com/ongchunho247-png/mrcurtain-survey.git
 Netlify : tu deploy tu branch main (~30 giay)
 ────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────
+[12:51:58 5/6/2026] DEPLOY THANH CONG
+Commit  : P30: Arrow rotate-by-endpoint, text double-tap-to-edit, single-tap-to-drag, rotate visual feedback
+Branch  : main
+Hash    : 3cbefa2 P30: Arrow rotate-by-endpoint, text double-tap-to-edit, single-tap-to-drag, rotate visual feedback
+Remote  : https://github.com/ongchunho247-png/mrcurtain-survey.git
+Netlify : tu deploy tu branch main (~30 giay)
+────────────────────────────────────────────────────────────

@@ -1609,7 +1609,7 @@
     // =============================================
     // STORAGE UTILS
     // =============================================
-    const APP_PROMPT_VERSION = 'P77'; // Cập nhật khi lên version mới
+    const APP_PROMPT_VERSION = 'P78'; // Cập nhật khi lên version mới
     const STORAGE_KEY = 'mrcurtain_survey_projects';
     const STORAGE_KEY_LEGACY = 'mrcurtain_projects'; // key cũ từ Prompt 2
     // Khai báo sớm để runDataMigration() dùng được (Prompt 14.2)
@@ -7363,41 +7363,37 @@
         navigateDirect(prev.screen, prev.selectedProjectId, prev.selectedImageId);
       }
 
-      // ── Swipe right to back ────────────────────────────────────
+      // ── Swipe right to back (P78: left-edge only, like iOS native) ──────
+      // Root fix: only allow back gesture when swipe STARTS from left 35px.
+      // This matches iOS convention and eliminates all false triggers from
+      // CalcPad buttons, size inputs, chip areas, etc. — no element checks needed.
       useEffect(() => {
         let sx = 0, sy = 0, backEnabled = false;
         function onTouchStart(e) {
-          backEnabled = false; // P75: flag approach — only enable if no overlay
-          const tag = e.target.tagName;
-          if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
-          if (document.querySelector('.modal-overlay')) return;
+          backEnabled = false;
+          // Chỉ kích hoạt khi bắt đầu từ cạnh trái ≤ 35px (giống iOS native back)
+          const x = e.touches[0].clientX;
+          if (x > 35) return;
+          // Không kích hoạt khi annotation editor đang mở
           if (document.querySelector('.ann-editor-overlay')) return;
-          if (document.querySelector('.calcpad-overlay')) return;
-          if (document.querySelector('.photo-menu-overlay')) return;
-          // P77: any touch inside a size-row (label, input, ×, +/- buttons) must not trigger back
-          if (e.target.closest('.size-row')) return;
-          if (e.target.closest('[data-selecting="true"]')) return;
-          sx = e.touches[0].clientX;
+          sx = x;
           sy = e.touches[0].clientY;
-          backEnabled = true; // only true if passed all overlay checks
+          backEnabled = true;
         }
         function onTouchEnd(e) {
-          if (!backEnabled) return; // blocked by overlay or input
+          if (!backEnabled) return;
           backEnabled = false;
           const dx = e.changedTouches[0].clientX - sx;
           const dy = e.changedTouches[0].clientY - sy;
           // Trượt phải đủ rõ và ngang hơn dọc
-          if (dx > 80 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+          if (dx > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
             handleBackRef.current();
           }
         }
-        // P76: use capture phase so this handler runs BEFORE React's stopPropagation
-        // (SuffixInput calls e.stopPropagation() in onTouchStart, which blocked backEnabled
-        //  from resetting to false for INPUT elements — now capture phase always fires first)
-        document.addEventListener('touchstart', onTouchStart, { capture: true, passive: true });
+        document.addEventListener('touchstart', onTouchStart, { passive: true });
         document.addEventListener('touchend',   onTouchEnd,   { passive: true });
         return () => {
-          document.removeEventListener('touchstart', onTouchStart, { capture: true });
+          document.removeEventListener('touchstart', onTouchStart);
           document.removeEventListener('touchend',   onTouchEnd);
         };
       }, []);  // đăng ký một lần, dùng ref để luôn có handleBack mới nhất
