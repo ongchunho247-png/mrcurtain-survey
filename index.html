@@ -1609,7 +1609,7 @@
     // =============================================
     // STORAGE UTILS
     // =============================================
-    const APP_PROMPT_VERSION = 'P75'; // Cập nhật khi lên version mới
+    const APP_PROMPT_VERSION = 'P76'; // Cập nhật khi lên version mới
     const STORAGE_KEY = 'mrcurtain_survey_projects';
     const STORAGE_KEY_LEGACY = 'mrcurtain_projects'; // key cũ từ Prompt 2
     // Khai báo sớm để runDataMigration() dùng được (Prompt 14.2)
@@ -7369,6 +7369,7 @@
           if (document.querySelector('.modal-overlay')) return;
           if (document.querySelector('.ann-editor-overlay')) return;
           if (document.querySelector('.calcpad-overlay')) return;
+          if (document.querySelector('.photo-menu-overlay')) return;
           if (e.target.closest('[data-selecting="true"]')) return;
           sx = e.touches[0].clientX;
           sy = e.touches[0].clientY;
@@ -7384,10 +7385,13 @@
             handleBackRef.current();
           }
         }
-        document.addEventListener('touchstart', onTouchStart, { passive: true });
+        // P76: use capture phase so this handler runs BEFORE React's stopPropagation
+        // (SuffixInput calls e.stopPropagation() in onTouchStart, which blocked backEnabled
+        //  from resetting to false for INPUT elements — now capture phase always fires first)
+        document.addEventListener('touchstart', onTouchStart, { capture: true, passive: true });
         document.addEventListener('touchend',   onTouchEnd,   { passive: true });
         return () => {
-          document.removeEventListener('touchstart', onTouchStart);
+          document.removeEventListener('touchstart', onTouchStart, { capture: true });
           document.removeEventListener('touchend',   onTouchEnd);
         };
       }, []);  // đăng ký một lần, dùng ref để luôn có handleBack mới nhất

@@ -1,0 +1,51 @@
+# ──────────────────────────────────────────────────────
+# MrCurtain Survey — .gitignore
+# ──────────────────────────────────────────────────────
+
+# Hệ điều hành
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+desktop.ini
+ehthumbs.db
+
+# Editor / IDE
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*~
+
+# Script tạm (dùng trong quá trình phát triển, không cần deploy)
+*.py
+gen_icons.js
+fix_*.py
+
+# Log
+*.log
+npm-debug.log*
+
+# Node (nếu sau này thêm build tools)
+node_modules/
+.npm
+
+# Biến môi trường — KHÔNG bao giờ commit
+.env
+.env.local
+.env.*.local
+
+# Thư mục output tạm
+outputs/
+dist/
+
+# Deploy automation — file trung gian Claude dùng để truyền commit message
+scripts/.pending-commit-message
+
+# Log deploy (không cần commit lịch sử log)
+logs/

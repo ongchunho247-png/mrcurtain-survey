@@ -1,0 +1,38 @@
+# ──────────────────────────────────────────────────────────────
+# MrCurtain Survey — Netlify configuration
+# Prompt 14.3: GitHub + auto-deploy setup
+# ──────────────────────────────────────────────────────────────
+
+[build]
+  # Không có bước build — deploy thẳng thư mục gốc
+  publish = "."
+
+# ── Cache headers ──────────────────────────────────────────────
+
+# index.html: KHÔNG cache — điện thoại luôn tải bản mới nhất
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Pragma        = "no-cache"
+    Expires       = "0"
+
+# manifest.json: KHÔNG cache — thay đổi theo app version
+[[headers]]
+  for = "/manifest.json"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+
+# Icon PNG: cache 1 ngày (ít thay đổi)
+[[headers]]
+  for = "/*.png"
+  [headers.values]
+    Cache-Control = "public, max-age=86400, immutable"
+
+# ── Security headers (áp dụng cho toàn bộ site) ───────────────
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options        = "SAMEORIGIN"
+    Referrer-Policy        = "strict-origin-when-cross-origin"
