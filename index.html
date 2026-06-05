@@ -1609,7 +1609,7 @@
     // =============================================
     // STORAGE UTILS
     // =============================================
-    const APP_PROMPT_VERSION = 'P74'; // Cập nhật khi lên version mới
+    const APP_PROMPT_VERSION = 'P75'; // Cập nhật khi lên version mới
     const STORAGE_KEY = 'mrcurtain_survey_projects';
     const STORAGE_KEY_LEGACY = 'mrcurtain_projects'; // key cũ từ Prompt 2
     // Khai báo sớm để runDataMigration() dùng được (Prompt 14.2)
@@ -7361,10 +7361,9 @@
 
       // ── Swipe right to back ────────────────────────────────────
       useEffect(() => {
-        let sx = 0, sy = 0;
+        let sx = 0, sy = 0, backEnabled = false;
         function onTouchStart(e) {
-          // P73fix: reset to large value so dx = endX - 9999 < 0, never triggers back
-          sx = 9999; sy = 9999;
+          backEnabled = false; // P75: flag approach — only enable if no overlay
           const tag = e.target.tagName;
           if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
           if (document.querySelector('.modal-overlay')) return;
@@ -7373,8 +7372,11 @@
           if (e.target.closest('[data-selecting="true"]')) return;
           sx = e.touches[0].clientX;
           sy = e.touches[0].clientY;
+          backEnabled = true; // only true if passed all overlay checks
         }
         function onTouchEnd(e) {
+          if (!backEnabled) return; // blocked by overlay or input
+          backEnabled = false;
           const dx = e.changedTouches[0].clientX - sx;
           const dy = e.changedTouches[0].clientY - sy;
           // Trượt phải đủ rõ và ngang hơn dọc
